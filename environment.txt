@@ -1,0 +1,4 @@
+# Conda-compatible package list for environment creation
+python=3.10
+click
+# Add other packages here as needed (requests, numpy, etc.)
