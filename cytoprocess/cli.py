@@ -29,99 +29,99 @@ def cli(ctx, debug, sample):
 @cli.command()
 @click.pass_context
 def create(ctx):
-    from cytoprocess.commands.create import run
+    from cytoprocess import create
 
-    run(ctx)
+    create.run(ctx)
 
 
 @cli.command()
 @click.pass_context
 def install(ctx):
-    from cytoprocess.commands.install import run
+    from cytoprocess import install
 
-    run(ctx)
+    install.run(ctx)
 
 
 @cli.command()
 @click.option("--file", "file_path", required=True, help="Path to input cyz file")
 @click.pass_context
 def convert(ctx, file_path):
-    from cytoprocess.commands.convert import run
+    from cytoprocess import convert
 
-    run(ctx, file=file_path)
+    convert.run(ctx, file=file_path)
 
 
 @cli.command(name="extract_meta")
 @click.pass_context
 def extract_meta(ctx):
-    from cytoprocess.commands.extract_meta import run
+    from cytoprocess import extract_meta
 
-    run(ctx)
+    extract_meta.run(ctx)
 
 
 @cli.command(name="extract_list")
 @click.pass_context
 def extract_list(ctx):
-    from cytoprocess.commands.extract_list import run
+    from cytoprocess import extract_list
 
-    run(ctx)
+    extract_list.run(ctx)
 
 
 @cli.command(name="extract_pulses")
 @click.option("--n-poly", default=10, help="Number of degrees in polynomial approximation")
 @click.pass_context
 def extract_pulses(ctx, n_poly):
-    from cytoprocess.commands.extract_pulses import run
+    from cytoprocess import extract_pulses
 
-    run(ctx, n_poly=n_poly)
+    extract_pulses.run(ctx, n_poly=n_poly)
 
 
 @cli.command(name="extract_images")
 @click.pass_context
 def extract_images(ctx):
-    from cytoprocess.commands.extract_images import run
+    from cytoprocess import extract_images
 
-    run(ctx)
+    extract_images.run(ctx)
 
 
 @cli.command(name="extract_features")
 @click.pass_context
 def extract_features(ctx):
-    from cytoprocess.commands.extract_features import run
+    from cytoprocess import extract_features
 
-    run(ctx)
+    extract_features.run(ctx)
 
 
 @cli.command(name="extract_all")
 @click.pass_context
 def extract_all(ctx):
-    from cytoprocess.commands.extract_all import run
+    from cytoprocess import extract_all
 
-    run(ctx)
+    extract_all.run(ctx)
 
 
 @cli.command()
 @click.pass_context
 def prepare(ctx):
-    from cytoprocess.commands.prepare import run
+    from cytoprocess import prepare
 
-    run(ctx)
+    prepare.run(ctx)
 
 
 @cli.command()
 @click.pass_context
 def upload(ctx):
-    from cytoprocess.commands.upload import run
+    from cytoprocess import upload
 
-    run(ctx)
+    upload.run(ctx)
 
 
 @cli.command(name="all")
 @click.pass_context
 def _all(ctx):
-    from cytoprocess.commands.all import run
+    from cytoprocess import all as all_cmd
 
-    run(ctx)
+    all_cmd.run(ctx)
 
 
 def main(argv=None):
