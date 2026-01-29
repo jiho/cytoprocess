@@ -99,12 +99,7 @@ def _download_latest_release() -> str:
         # clean up temporary file
         logger.debug(f"Removing temporary file {tmp_path}")
         os.remove(tmp_path)
-
-        # on macOS, remove quarantine attribute
-        if release_file == "cyz2json-macos-latest.zip":
-            logger.debug("Removing quarantine attribute from cyz2json files")
-            subprocess.run(f'xattr -d com.apple.quarantine {cyz2json_dir}/*', shell=True)
-        
+       
         # create symlink in bin_dir
         # define symkink source and name
         executable_path = cyz2json_dir / _get_executable_name()
