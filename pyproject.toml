@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cytoprocess"
+version = "0.0.1"
+description = "Package to process images from a CytoSense file"
+dependencies = ["click"]
+
+[project.scripts]
+cytoprocess = "cytoprocess.cli:main"
