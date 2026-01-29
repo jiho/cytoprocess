@@ -144,6 +144,7 @@ def run(ctx):
     logger.info("Fetching cyz2json")
     try:
         path = _check_or_get_cyz2json()
-        logger.info(f"cyz2json available at: {path}")
+        result = subprocess.run([path, '--version'], check=True, capture_output=True, text=True)
+        logger.info(f"cyz2json available at {path} with version {result.stdout.strip()}")
     except Exception as e:
         raise RuntimeError(f"Failed to install cyz2json: {e}")
