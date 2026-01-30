@@ -68,11 +68,13 @@ def cleanup(ctx, project):
     cleanup.run(ctx, project=project)
 
 @cli.command(name="extract_meta")
+@click.argument("project")
+@click.option("--list", "list_keys", is_flag=True, default=False, help="List all metadata items found in the JSON file(s) instead of extracting some of them")
 @click.pass_context
-def extract_meta(ctx):
+def extract_meta(ctx, project, list_keys):
     from cytoprocess.commands import extract_meta
 
-    extract_meta.run(ctx)
+    extract_meta.run(ctx, project=project, list_keys=list_keys)
 
 
 @cli.command(name="extract_list")
