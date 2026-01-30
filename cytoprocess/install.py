@@ -56,7 +56,8 @@ def _download_latest_release() -> str:
         with urllib.request.urlopen(api_url) as response:
             data = json.loads(response.read().decode())
     except Exception as e:
-        raise RuntimeError(f"Failed to fetch latest release: {e}")
+        logger.error(f"Failed to fetch latest release: {e}")
+        raise
     
     # search for the appropriate release file
     release_file = _get_release_file_name()
@@ -121,7 +122,8 @@ def _download_latest_release() -> str:
         logger.info(f"Successfully installed cyz2json to {symlink_path}")
     
     except Exception as e:
-        raise RuntimeError(f"Failed to download and install cyz2json: {e}")
+        logger.error(f"Failed to download and install cyz2json: {e}")
+        raise
     
     return str(symlink_path)
 
@@ -147,4 +149,5 @@ def run(ctx):
         result = subprocess.run([path, '--version'], check=True, capture_output=True, text=True)
         logger.info(f"cyz2json available at {path} with version {result.stdout.strip()}")
     except Exception as e:
-        raise RuntimeError(f"Failed to install cyz2json: {e}")
+        logger.error(f"Failed to install cyz2json: {e}")
+        raise
