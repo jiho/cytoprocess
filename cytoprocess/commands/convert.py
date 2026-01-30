@@ -26,9 +26,7 @@ def run(ctx, project, force=False):
     except Exception as e:
         logger.error(f"Failed to get Cyz2Json binary: {e}")
         raise
-    
-    logger.debug(f"Using Cyz2Json at {cyz2json_path}")
-    
+        
     # Create processed directory if it doesn't exist
     logger.debug(f"Checking if directory {converted_dir} exists and creating if necessary")
     converted_dir.mkdir(parents=True, exist_ok=True)
