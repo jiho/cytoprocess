@@ -1,47 +1,22 @@
 import logging
 import subprocess
 from pathlib import Path
+from cytoprocess.utils import get_sample_files
 
 
 def run(ctx, project, force=False):
     logger = logging.getLogger("cytoprocess.convert")
     logger.info(f"Converting .cyz files in project={project}")
     
-    # Get sample from context
-    sample = getattr(ctx, "obj", {}).get("sample")
-    if sample:
-        logger.debug(f"Limiting conversion to sample: {sample}")
     if force:
         logger.debug("Force flag enabled - existing JSON files will be overwritten")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
-    # Define raw and converted directories
-    raw_dir = Path(project) / "raw"
-    converted_dir = Path(project) / "converted"
-        
-    # Check if raw directory exists
-    logger.debug(f"Checking for raw directory at {raw_dir}")
-    if not raw_dir.exists():
-        logger.warning(f"Raw directory ('{raw_dir}') does not exist. Are you sure this is a valid project directory?")
-        return
+    # Get .cyz files from raw directory
+    cyz_files = get_sample_files(project, kind="cyz", ctx=ctx)
     
-    # List all .cyz files in raw directory
-    logger.debug(f"Listing .cyz files in {raw_dir}")
-    cyz_files = list(raw_dir.glob("*.cyz"))
-
-    if not cyz_files:
-        logger.info(f"No .cyz files found in {raw_dir}")
-        return
-        
-    # Filter by sample if specified
-    if sample:
-        cyz_files = [f for f in cyz_files if f.stem == sample]
-        if not cyz_files:
-            logger.info(f"No .cyz file found for sample '{sample}' in {raw_dir}")
-            return
-        logger.info(f"Found file 'raw/{cyz_files[0].name}'")
-    else:
-        logger.info(f"Found {len(cyz_files)} .cyz files to convert")
+    # Define converted directory
+    converted_dir = Path(project) / "converted"
     
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")
