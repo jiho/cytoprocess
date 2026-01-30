@@ -68,7 +68,7 @@ def run(ctx, project, force=False):
                 capture_output=True,
                 text=True
             )
-            logger.info(f"Successfully converted '{cyz_file.name}'")
+            logger.debug(f"Successfully converted '{cyz_file.name}'")
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to convert {cyz_file.name}: {e.stderr}")
             raise
