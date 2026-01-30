@@ -1,6 +1,7 @@
 import logging
 import sys
 import click
+from pathlib import Path
 
 
 def _configure_logging(debug: bool):
@@ -14,13 +15,18 @@ def _configure_logging(debug: bool):
 
 @click.group()
 @click.option("--debug", is_flag=True, default=False, help="Enable debug logging")
-@click.option("--sample", default=None, help="Sample name")
+@click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file")
 @click.pass_context
 def cli(ctx, debug, sample):
     """CytoProcess command line interface."""
     ctx.ensure_object(dict)
     ctx.obj["debug"] = debug
+    # Normalize sample name if provided (remove path and .cyz extension if present)
+    if sample:
+        sample_path = Path(sample)
+        sample = sample_path.stem
     ctx.obj["sample"] = sample
+    
     _configure_logging(debug)
     logger = logging.getLogger("cytoprocess.cli")
     logger.debug("CLI started (debug=%s, sample=%s)", debug, sample)
