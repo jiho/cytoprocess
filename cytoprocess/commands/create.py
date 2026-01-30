@@ -11,8 +11,10 @@ def run(ctx, project):
     
     # Create the main directory if it doesn't exist
     if (Path(project).exists()):
-        logger.info(f"Project directory {project} already exists." )
-    os.makedirs(project, exist_ok=True)
+        logger.info(f"Project directory {project} already exists.")
+    else
+        logger.info(f"Creating project directory {project}.")
+        os.makedirs(project, exist_ok=True)
     
     # List of subdirectories to create
     subdirectories = ["raw", "converted", "work", "config", "meta", "ecotaxa"]
