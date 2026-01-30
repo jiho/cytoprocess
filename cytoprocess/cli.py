@@ -44,12 +44,13 @@ def install(ctx):
 
 
 @cli.command()
-@click.option("--file", "file_path", required=True, help="Path to input cyz file")
+@click.argument("project")
+@click.option("--force", is_flag=True, default=False, help="Force conversion even if JSON files already exist")
 @click.pass_context
-def convert(ctx, file_path):
+def convert(ctx, project, force):
     from cytoprocess import convert
 
-    convert.run(ctx, file=file_path)
+    convert.run(ctx, project=project, force=force)
 
 
 @cli.command(name="extract_meta")
