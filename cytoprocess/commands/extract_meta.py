@@ -1,5 +1,7 @@
 import logging
 import ijson
+import yaml
+import pandas as pd
 from pathlib import Path
 from cytoprocess.utils import get_sample_files
 
@@ -55,9 +57,78 @@ def _get_json_structure(json_data, prefix=""):
     return paths
 
 
+def _get_json_item(json_data, path):
+    """
+    Retrieve value(s) from a JSON object given a path with dot notation.
+    
+    Handles paths that include [] notation for list items.
+    When a list is encountered, all matching values are collected and
+    concatenated with spaces.
+    
+    Args:
+        json_data: Parsed JSON data (dict)
+        path: Path string (e.g., "user.name" or "items[].id")
+        
+    Returns:
+        The value at the given path. For list items, returns a space-separated
+        string of all matching values. Returns None if path not found.
+        
+    Examples:
+        >>> data = {"user": {"name": "John"}}
+        >>> _get_json_item(data, "user.name")
+        'John'
+        
+        >>> data = {"items": [{"id": 1}, {"id": 2}, {"id": 3}]}
+        >>> _get_json_item(data, "items[].id")
+        '1 2 3'
+    """
+    path_parts = path.split('.')
+    current = json_data
+    values = []
+    
+    for part in path_parts:
+        if current is None:
+            return None
+            
+        # Check if this part refers to a list
+        if part.endswith('[]'):
+            # Remove the [] notation
+            key = part[:-2]
+            
+            # Navigate to the list
+            if isinstance(current, dict) and key in current:
+                list_value = current[key]
+                if isinstance(list_value, list):
+                    # Continue with all list items
+                    remaining_path = '.'.join(path_parts[path_parts.index(part) + 1:])
+                    if remaining_path:
+                        # There are more path components, recurse for each list item
+                        for item in list_value:
+                            result = _get_json_item(item, remaining_path)
+                            if result is not None:
+                                values.append(str(result))
+                    else:
+                        # No more path, just collect the list items
+                        for item in list_value:
+                            values.append(str(item))
+                    # Return concatenated values and stop processing
+                    return ' '.join(values) if values else None
+            else:
+                return None
+        else:
+            # Regular dict key navigation
+            if isinstance(current, dict) and part in current:
+                current = current[part]
+            else:
+                return None
+    
+    # Return the final value
+    return current if current is not None else None
+
+
 def run(ctx, project, list_keys=False):
     logger = logging.getLogger("cytoprocess.extract_meta")
-    logger.info(f"Extracting metadata structure from JSON files in project={project}")
+    logger.info(f"Extracting metadata from JSON files in project={project}")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
         
     # Get JSON files from converted directory
@@ -108,6 +179,81 @@ def run(ctx, project, list_keys=False):
                 f.write(f"{key_path}\n")
         
         logger.info(f"Keys written to {keys_file}")
+
     else:
-        logger.info(f"Not implemented yet: extraction of specific metadata items")
+        # Extract specific metadata items based on metadata_config.yaml
+        config_file = Path(project) / "config" / "metadata_config.yaml"
+        
+        if not config_file.exists():
+            logger.error(f"Configuration file not found: {config_file}")
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        
+        logger.info(f"Reading metadata configuration from {config_file}")
+        with open(config_file, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        # Prepare data structure: list of dicts, one per JSON file
+        metadata_rows = []
+        
+        for json_file in json_files:
+            try:
+                logger.debug(f"Extracting metadata from {json_file.name}")
+                
+                # Load the instrument section of the json file
+                with open(json_file, 'rb') as f:
+                    parser = ijson.items(f, 'instrument')
+                    instrument_data = next(parser, None)
+                    
+                    if instrument_data is None:
+                        logger.warning(f"No 'instrument' key found in {json_file.name}")
+                        continue
+                
+                # Create a row for this file
+                row = {}
+                
+                # Process each section (sample, acq, process)
+                for section_name, section_keys in config.items():
+                    if not isinstance(section_keys, dict):
+                        continue
+                    
+                    logger.debug(f"Processing section: {section_name}")
+                    
+                    # Define the identifier for this row and section
+                    # NB: there is only *one* acq and *one* process per sample, so we use the same ID everywhere
+                    row[f"{section_name}_id"] = json_file.stem
+
+                    # Extract each key in this section
+                    for json_path, column_name in section_keys.items():
+                        # Prepend section name to column name
+                        full_column_name = f"{section_name}_{column_name}"
+                        
+                        # Get the value from the JSON
+                        value = _get_json_item(instrument_data, json_path)
+                        
+                        if value is None:
+                            logger.debug(f"Key '{json_path}' not found in {json_file.name}")
+                        
+                        row[full_column_name] = value
+                
+                metadata_rows.append(row)
+                logger.info(f"Extracted {len(row)-1} metadata fields from {json_file.name}")
+                
+            except ijson.JSONError as e:
+                logger.error(f"Failed to parse JSON file {json_file.name}: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Error processing {json_file.name}: {e}")
+                raise
+        
+        # Create DataFrame
+        df = pd.DataFrame(metadata_rows)
+                
+        # Save to CSV in meta directory
+        meta_dir = Path(project) / "meta"
+        meta_dir.mkdir(parents=True, exist_ok=True)
+        output_file = meta_dir / "instrument_metadata.csv"
+        
+        df.to_csv(output_file, index=False)
+        logger.info(f"Metadata extracted and saved to {output_file}")
+        logger.debug(f"DataFrame shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
