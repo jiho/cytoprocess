@@ -1,0 +1,48 @@
+# Metadata extraction for EcoTaxa:
+# --------------------------------
+# Maps instrument metadata items from the JSON files to (possibly simplified) column names for import into EcoTaxa
+# Metadata fields in EcoTaxa are organised in three levels: sample, acq (acquisition), and process (processing)
+# Edit this file to customize which metadata fields are extracted and how they are named
+
+sample:
+  serialNumber: serial_number
+  name: instrument_name
+  measurementSettings.CytoSettings.CytoSettings.Model: model
+  measurementSettings.CytoSettings.CytoSettings.HardwareNumber: hardware_number
+  measurementSettings.CytoSettings.CytoSettings.Softwareversion: software_version
+  measurementSettings.CytoSettings.CytoSettings.LaserInfo[].Wavelength: laser_wavelengths
+  measurementSettings.CytoSettings.CytoSettings.LaserInfo[].MaxPower: laser_max_powers
+  measurementSettings.CytoSettings.CytoSettings.LaserBeamWidth: laser_beam_width
+  laserBeamWidth: beam_width
+  sampleCoreSpeed: sample_core_speed
+  channels[].description: channel_descriptions
+  measurementSettings.CytoSettings.CytoSettings.OpticalMagnification: optical_magnification
+
+acq:
+  measurementResults.start: start_time
+  measurementResults.duration: duration
+  measurementResults.analysedVolume: analysed_volume
+  measurementResults.pumpedVolume: pumped_volume
+  measurementResults.particleCount: particle_count
+  measurementResults.particleConcentration: particle_concentration
+  measurementResults.pressureAbsolute: pressure_absolute
+  measurementResults.pressureDifferential: pressure_differential
+  measurementResults.sheathTemperature: sheath_temperature
+  measurementResults.buoyTemperature: buoy_temperature
+  measurementSettings.CytoSettings.SamplePompSpeed: sample_pump_speed
+  measurementSettings.CytoSettings.TriggerLevel1e: trigger_level
+  measurementSettings.CytoSettings.PMTlevels: pmt_levels
+  measurementSettings.CytoSettings.MaxTimeOut: max_timeout
+
+process:
+  measurementSettings.CytoSettings.CytoSettings.SampleFrequency: sample_frequency
+  measurementSettings.CytoSettings.CytoSettings.ImagePixelSize: image_pixel_size
+  measurementSettings.CytoSettings.CytoSettings.CameraPixelSize: camera_pixel_size
+  measurementSettings.CytoSettings.CytoSettings.Sample_to_um_ConversionFactor: sample_to_um_factor
+  measurementSettings.CytoSettings.CytoSettings.Curvature: curvature
+  measurementSettings.CytoSettings.ChannelDataConversion[]: channel_data_conversions
+  measurementSettings.CytoSettings.IIFParameters.BeamWidth: iif_beam_width
+  measurementSettings.CytoSettings.IIFParameters.CoreSpeed: iif_core_speed
+  measurementResults.pictureCount: picture_count
+  measurementSettings.CytoSettings.CytoSettings.iif.opticalMagnification: iif_optical_magnification
+  measurementSettings.CytoSettings.CytoSettings.triggerlevelConstant: trigger_level_constant
