@@ -27,12 +27,12 @@ def cli(ctx, debug, sample):
 
 
 @cli.command()
-@click.argument("directory")
+@click.argument("project")
 @click.pass_context
-def create(ctx, directory):
+def create(ctx, project):
     from cytoprocess import create
 
-    create.run(ctx, directory=directory)
+    create.run(ctx, project=project)
 
 
 @cli.command()
