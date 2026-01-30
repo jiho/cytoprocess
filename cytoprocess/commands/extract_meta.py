@@ -126,6 +126,29 @@ def _get_json_item(json_data, path):
     return current if current is not None else None
 
 
+def _get_instrument_data(json_file):
+    """
+    Load the 'instrument' section from a JSON file.
+    
+    Args:
+        json_file: Path to the JSON file.
+    Returns:
+        The 'instrument' section as a dict, or None if not found.
+    """
+    logger = logging.getLogger("cytoprocess.extract_meta")
+    logger.debug(f"Reading 'instrument' section from {json_file.name}")
+
+    with open(json_file, 'rb') as f:
+        # Use ijson to stream only the 'instrument' part
+        parser = ijson.items(f, 'instrument')
+        instrument_data = next(parser, None)
+        
+        if instrument_data is None:
+            logger.warning(f"No 'instrument' key found in {json_file.name}")
+        
+    return instrument_data
+
+
 def run(ctx, project, list_keys=False):
     logger = logging.getLogger("cytoprocess.extract_meta")
     logger.info(f"Extracting metadata from JSON files in project={project}")
@@ -137,21 +160,17 @@ def run(ctx, project, list_keys=False):
     logger.info(f"Processing {len(json_files)} JSON file(s)")
         
     if list_keys:
-        # If the --list argument is provided, only extract structure keys from each JSON file
+        # If the --list argument is provided, extract metadata keys from each JSON file and store them in a text file
+        # This will be the basis for the user to create metadata_config.yaml
+
         keys = []
         for json_file in json_files:
             try:
-                logger.debug(f"Reading 'instrument' key from {json_file.name}")
-                with open(json_file, 'rb') as f:
-                    # Use ijson to stream only the 'instrument' part
-                    parser = ijson.items(f, 'instrument')
-                    instrument_data = next(parser, None)
-                    
-                    if instrument_data is None:
-                        logger.warning(f"No 'instrument' key found in {json_file.name}")
-                        continue
-                    
-                    # Extract structure keys
+                # Load the instrument section of the json file
+                instrument_data = _get_instrument_data(json_file)
+
+                # If it is found, extract all the metadata keys it contains
+                if instrument_data is not None:
                     keys.extend(_get_json_structure(instrument_data))
                 
             except ijson.JSONError as e:
@@ -163,7 +182,7 @@ def run(ctx, project, list_keys=False):
 
             logger.info(f"Found {len(keys)} metadata items in '{json_file.name}'")
 
-        # If multiple files, deduplicate keys
+        # If there are multiple json files, deduplicate keys
         if len(json_files) > 1:
             keys = list(set(keys))
             logger.info(f"Found {len(keys)} unique metadata items across all JSON files")
@@ -171,6 +190,7 @@ def run(ctx, project, list_keys=False):
         # Make sure config directory exists
         config_dir = Path(project) / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
+        # TODO wrap this into a function in utils.py and use it elsewhere
 
         # Write keys to file
         keys_file = config_dir / "available_metadata_keys.txt"
@@ -181,7 +201,8 @@ def run(ctx, project, list_keys=False):
         logger.info(f"Keys written to {keys_file}")
 
     else:
-        # Extract specific metadata items based on metadata_config.yaml
+        # Otherwise, in normal operations, extract specific metadata items based on metadata_config.yaml
+
         config_file = Path(project) / "config" / "metadata_config.yaml"
         
         if not config_file.exists():
@@ -199,14 +220,12 @@ def run(ctx, project, list_keys=False):
             try:
                 logger.debug(f"Extracting metadata from {json_file.name}")
                 
-                # Load the instrument section of the json file
-                with open(json_file, 'rb') as f:
-                    parser = ijson.items(f, 'instrument')
-                    instrument_data = next(parser, None)
-                    
-                    if instrument_data is None:
-                        logger.warning(f"No 'instrument' key found in {json_file.name}")
-                        continue
+                 # Load the instrument section of the json file
+                instrument_data = _get_instrument_data(json_file)
+
+                # If it is found, extract all the metadata keys it contains
+                if instrument_data is None:
+                    continue
                 
                 # Create a row for this file
                 row = {}
