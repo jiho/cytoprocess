@@ -32,7 +32,7 @@ def run(ctx, project, force=False):
     
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")
-    from cytoprocess import install
+    from cytoprocess.commands import install
     try:
         cyz2json_path = install._check_or_get_cyz2json()
     except Exception as e:
