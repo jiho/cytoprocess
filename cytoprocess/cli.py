@@ -53,7 +53,13 @@ def convert(ctx, project, force):
     convert.run(ctx, project=project, force=force)
 
 
-@cli.command(name="extract_meta")
+@cli.command()
+@click.argument("project")
+@click.pass_context
+def cleanup(ctx, project):
+    from cytoprocess import cleanup
+
+    cleanup.run(ctx, project=project)
 @click.pass_context
 def extract_meta(ctx):
     from cytoprocess import extract_meta
