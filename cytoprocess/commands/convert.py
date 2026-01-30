@@ -5,7 +5,7 @@ from pathlib import Path
 
 def run(ctx, project, force=False):
     logger = logging.getLogger("cytoprocess.convert")
-    logger.info(f"Converting all .cyz files in project={project}")
+    logger.info(f"Converting .cyz files in project={project}")
     
     # Get sample from context
     sample = getattr(ctx, "obj", {}).get("sample")
