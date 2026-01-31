@@ -167,15 +167,15 @@ def run(ctx, project, list_keys=False):
             logger.info(f"Found {len(keys)} unique metadata items across all JSON files")
 
         # Make sure config directory exists
-        config_dir = ensure_project_dir(project, "config")
+        meta_dir = ensure_project_dir(project, "meta")
 
         # Write keys to file
-        keys_file = config_dir / "available_metadata_keys.txt"
+        keys_file = meta_dir / "available_metadata_fields.txt"
         with open(keys_file, 'w') as f:
             for key_path in sorted(keys):
                 f.write(f"{key_path}\n")
         
-        logger.info(f"Keys written to {keys_file}")
+        logger.info(f"Available metadata fields written to {keys_file}. Use them in the sample, acq, and process sections of the config.yaml file to define metadata extraction.")
 
     else:
         # Otherwise, in normal operations, extract specific metadata items based on config.yaml
