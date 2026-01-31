@@ -71,6 +71,9 @@ def _extract_features(mask, image):
     """
     # Label the mask (should be single region)
     labeled = measure.label(mask)
+
+    if labeled.max() == 0:
+        return None    
     
     # Extract relevant features
     props = ['area', 'area_filled', 'axis_major_length', 'axis_minor_length', 
@@ -93,7 +96,8 @@ def _process_single_image(args):
     """
     image_file, sample_id = args
     particle_id = image_file.stem
-    
+    logger = logging.getLogger("cytoprocess.compute_features")
+   
     try:
         # Read image as grayscale
         image = io.imread(image_file, as_gray=True)
@@ -102,12 +106,14 @@ def _process_single_image(args):
         mask = _segment_particle(image)
         
         if mask is None:
+            logger.warning(f"Could not segment particle in image {image_file.name}")
             return None
         
         # Extract features
         features = _extract_features(mask, image)
         
         if features is None:
+            logger.warning(f"Could not extract features from particle in image {image_file.name}")
             return None
         
         # Create row with identifiers and features
@@ -122,7 +128,8 @@ def _process_single_image(args):
         
         return row
         
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error processing image {image_file.name}: {e}")
         return None
 
 
