@@ -1,13 +1,14 @@
-# Metadata extraction for EcoTaxa:
-# --------------------------------
-# This file maps instrument metadata items from the .json files to
+# CytoProcess configuration file
+# ------------------------------
+
+
+# This part maps instrument metadata items from the .json files to
 # (possibly simplified) column names for import into EcoTaxa.
 #
 # Metadata fields in EcoTaxa are organised in three levels:
 #    sample, acq (acquisition), and process (processing)
 # Edit the sections below to customize which metadata fields are extracted,
 # at which EcoTaxa level they are associated, and how they will be named.
-
 sample:
   serialNumber: serial_number
   name: instrument_name
