@@ -119,11 +119,12 @@ def extract_images(ctx, project, force):
 @cli.command(name="compute_features")
 @click.argument("project")
 @click.option("--force", is_flag=True, default=False, help="Force processing even if output files already exist")
+@click.option("--max-cores", type=int, default=None, help="Maximum number of CPU cores to use for parallel processing")
 @click.pass_context
-def compute_features(ctx, project, force):
+def compute_features(ctx, project, force, max_cores):
     """Compute features from extracted images."""
     from cytoprocess.commands import compute_features
-    compute_features.run(ctx, project=project, force=force)
+    compute_features.run(ctx, project=project, force=force, max_cores=max_cores)
 
 
 @cli.command()

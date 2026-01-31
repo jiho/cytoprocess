@@ -1,7 +1,9 @@
 import logging
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from multiprocessing import Pool
 from skimage import io, feature, morphology, measure, filters
 from scipy import ndimage
 from cytoprocess.utils import ensure_project_dir
@@ -104,10 +106,62 @@ def _extract_features(mask, image):
     return features
 
 
-def run(ctx, project, force=False):
+def _process_single_image(args):
+    """
+    Process a single image file and return features.
+    
+    Args:
+        args: Tuple of (image_file, sample_id)
+        
+    Returns:
+        Dictionary of features with identifiers, or None if processing failed
+    """
+    image_file, sample_id = args
+    particle_id = image_file.stem
+    
+    try:
+        # Read image as grayscale
+        image = io.imread(image_file, as_gray=True)
+        
+        # Segment the particle
+        mask = _segment_particle(image)
+        
+        if mask is None:
+            return None
+        
+        # Extract features
+        features = _extract_features(mask, image)
+        
+        if features is None:
+            return None
+        
+        # Create row with identifiers and features
+        row = {
+            'sample_id': sample_id,
+            'object_id': f"{sample_id}_{particle_id}"
+        }
+        
+        # Add features with object_ prefix
+        for feat_name, feat_val in features.items():
+            row[f"object_{feat_name}"] = feat_val
+        
+        return row
+        
+    except Exception:
+        return None
+
+
+def run(ctx, project, force=False, max_cores=None):
     logger = logging.getLogger("cytoprocess.compute_features")
     logger.info(f"Computing image features in project={project}")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
+    
+    # Determine number of cores to use
+    available_cores = os.cpu_count() or 1
+    n_cores = max(1, available_cores - 1)
+    if max_cores is not None:
+        n_cores = min(n_cores, max_cores)
+    logger.debug(f"Using {n_cores} core(s) for parallel processing")
     
     # Check images directory exists
     images_dir = Path(project) / "images"
@@ -156,46 +210,17 @@ def run(ctx, project, force=False):
             
             logger.info(f"Processing {len(image_files)} images for sample {sample_id}")
             
-            # Prepare data structure: list of dicts, one per particle
-            rows = []
+            # Prepare arguments for parallel processing
+            args_list = [(image_file, sample_id) for image_file in image_files]
             
-            # Process each image
-            for image_file in image_files:
-                particle_id = image_file.stem
-                
-                try:
-                    # Read image as grayscale
-                    image = io.imread(image_file, as_gray=True)
-                    
-                    # Segment the particle
-                    mask = _segment_particle(image)
-                    
-                    if mask is None:
-                        logger.debug(f"Could not segment particle {particle_id} in {sample_id}")
-                        continue
-                    
-                    # Extract features
-                    features = _extract_features(mask, image)
-                    
-                    if features is None:
-                        logger.debug(f"Could not extract features for particle {particle_id} in {sample_id}")
-                        continue
-                    
-                    # Create row with identifiers and features
-                    row = {
-                        'sample_id': sample_id,
-                        'object_id': f"{sample_id}_{particle_id}"
-                    }
-                    
-                    # Add features with object_ prefix
-                    for feat_name, feat_val in features.items():
-                        row[f"object_{feat_name}"] = feat_val
-                    
-                    rows.append(row)
-                    
-                except Exception as e:
-                    logger.warning(f"Error processing image {image_file.name}: {e}")
-                    continue
+            # Process images in parallel
+            with Pool(processes=n_cores) as pool:
+                results = pool.map(_process_single_image, args_list)
+            
+            # Filter out None results
+            rows = [r for r in results if r is not None]
+            
+            logger.debug(f"Successfully processed {len(rows)}/{len(image_files)} images")
             
             if not rows:
                 logger.warning(f"No features extracted from sample {sample_id}")
