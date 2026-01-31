@@ -3,11 +3,11 @@
 
 
 # This part maps instrument metadata items from the .json files to
-# (possibly simplified) column names for import into EcoTaxa.
-#
+# column names for import into EcoTaxa.
 # Metadata fields in EcoTaxa are organised in three levels:
 #    sample, acq (acquisition), and process (processing)
-# Edit the sections below to customize which metadata fields are extracted,
+# Run `cytoprocess extract_meta --list <project>` to see all available fields.
+# Edit the sections below to customize which fields are extracted,
 # at which EcoTaxa level they are associated, and how they will be named.
 sample:
   serialNumber: serial_number
@@ -55,13 +55,12 @@ process:
 
 # This part maps cytometric features from particles in the .json files to
 # column names for import into EcoTaxa.
-#
 # Object-level features are extracted from each particle's "parameters" list.
 # Paths are in the format "description.key" where description identifies
 # the parameter (e.g., "FWS", "Sidewards Scatter", "Fl Red") and key is the
 # specific measurement (e.g., "length", "total", "maximum").
-#
-# Run `cytoprocess extract_cyto <project> --list` to see all available paths.
+# Run `cytoprocess extract_cyto --list <project>` to list all available features.
+# Edit the section below to customize which features are extracted and how they are named.
 object:
   FWS.length: fws_length
   FWS.total: fws_total
