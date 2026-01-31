@@ -11,7 +11,7 @@ def _configure_logging(debug: bool):
         stream=sys.stdout,
         format="[%(levelname)s] %(name)s: %(message)s",
     )
-
+# TODO log to console and to a file in the logs/ directory of the project
 
 @click.group()
 @click.option("--debug", is_flag=True, default=False, help="Enable debug logging")
@@ -95,11 +95,12 @@ def extract_pulses(ctx, n_poly):
 
 
 @cli.command(name="extract_images")
+@click.argument("project", type=click.Path(exists=True))
 @click.pass_context
-def extract_images(ctx):
+def extract_images(ctx, project):
     from cytoprocess.commands import extract_images
 
-    extract_images.run(ctx)
+    extract_images.run(ctx, project)
 
 
 @cli.command(name="extract_features")
