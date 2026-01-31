@@ -9,13 +9,11 @@ Package to process images and their features from .cyz files and upload them to 
 pip install git+https://github.com/jiho/cytoprocess.git
 ```
 
-This install the Python package that includes a command line tool, which should be available from within a terminal. Try it with
+This install the Python package that includes a command line tool, which should be available from within a terminal. Try it, which should output the help message
 
 ```bash
 cytoprocess
 ```
-
-which should output the help message.
 
 CytoProcess depends on [Cyz2Json](https://github.com/OBAMANEXT/cyz2json). To install it, run
 
@@ -72,7 +70,8 @@ Use
 cytoprocess create path/to/my_project
 ```
 
-Then copy/move the .cyz files you want to include in `my_project/raw`. If you have an archive of .cyz files organised differently, you should be able to symlink them in `my_project/raw` instead of copying them.
+Then copy/move the .cyz files that are relevant for this project in `my_project/raw`. If you have an archive of .cyz files organised differently, you should be able to symlink them in `my_project/raw` instead of copying them.
+
 
 ### Processing samples in a project
 
@@ -143,7 +142,7 @@ pip install -e .
 
 This creates a `cytoprocess.egg-info` directory at the root of the package's directory. It is safely ignored by git (and you should too).
 
-Now run either run commands as you normally would
+Now, either run commands as you normally would
 
 ```bash
 cytoprocess --help
