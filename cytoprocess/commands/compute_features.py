@@ -72,38 +72,13 @@ def _extract_features(mask, image):
     # Label the mask (should be single region)
     labeled = measure.label(mask)
     
-    # Get region properties with intensity
-    regions = measure.regionprops(labeled, intensity_image=image)
+    # Extract relevant features
+    props = ['area', 'area_filled', 'axis_major_length', 'axis_minor_length', 
+             'eccentricity', 'feret_diameter_max', 'intensity_max', 'intensity_mean',
+             'intensity_min', 'perimeter', 'solidity', 'moments_hu', 'moments_weighted_hu']
+    features_table = measure.regionprops_table(labeled, intensity_image=image, properties=props)
     
-    if not regions:
-        return None
-    
-    region = regions[0]
-    
-    # Extract requested features
-    features = {
-        'area': region.area,
-        'area_filled': region.area_filled,
-        'major': region.axis_major_length,
-        'minor': region.axis_minor_length,
-        'eccentricity': region.eccentricity,
-        'feret': region.feret_diameter_max,
-        'intensity_max': region.intensity_max,
-        'intensity_mean': region.intensity_mean,
-        'intensity_min': region.intensity_min,
-        'perimeter': region.perimeter,
-        'solidity': region.solidity,
-    }
-    
-    # Add Hu moments (7 values)
-    for i, hu_val in enumerate(region.moments_hu):
-        features[f'moments_hu_{i}'] = hu_val
-    
-    # Add weighted Hu moments (7 values)
-    for i, hu_val in enumerate(region.moments_weighted_hu):
-        features[f'moments_hu_weighted_{i}'] = hu_val
-    
-    return features
+    return features_table
 
 
 def _process_single_image(args):
@@ -141,9 +116,9 @@ def _process_single_image(args):
             'object_id': f"{sample_id}_{particle_id}"
         }
         
-        # Add features with object_ prefix
-        for feat_name, feat_val in features.items():
-            row[f"object_{feat_name}"] = feat_val
+        # Add features, with the object_ prefix
+        for key, value in features.items():
+            row[f"object_{key}"] = value[0]
         
         return row
         
