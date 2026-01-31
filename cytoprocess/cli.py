@@ -90,11 +90,13 @@ def extract_cyto(ctx, project, list_keys, force):
 
 
 @cli.command(name="summarise_pulses")
-@click.option("--n-poly", default=10, help="Number of degrees in polynomial approximation")
+@click.argument("project")
+@click.option("--n-poly", default=10, help="Number of polynomial coefficients")
+@click.option("--force", is_flag=True, default=False, help="Force processing even if output files already exist")
 @click.pass_context
-def summarise_pulses(ctx, n_poly):
+def summarise_pulses(ctx, project, n_poly, force):
     from cytoprocess.commands import summarise_pulses
-    summarise_pulses.run(ctx, n_poly=n_poly)
+    summarise_pulses.run(ctx, project=project, n_poly=n_poly, force=force)
 
 
 @cli.command(name="extract_images")
@@ -158,7 +160,7 @@ def _all(ctx, project, force):
         extract_cyto.run(ctx, project=project, list_keys=False, force=force)
         
         logger.info("Step 4/8: Summarising pulse shapes")
-        summarise_pulses.run(ctx)
+        summarise_pulses.run(ctx, project=project, force=force)
 
         logger.info("Step 5/8: Extracting images")
         extract_images.run(ctx, project=project, force=force)
