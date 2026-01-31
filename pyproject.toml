@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cytoprocess"
 version = "0.0.1"
-description = "Package to process images from a CytoSense file"
+description = "Package to process images and their features from .cyz files and upload them to EcoTaxa"
 dependencies = [
     "click>=8.0",
     "ijson>=3.0",
