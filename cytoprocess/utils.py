@@ -88,7 +88,7 @@ def get_sample_files(project: str, kind: str = "json", ctx=None) -> list:
         raise ValueError(f"kind must be 'json' or 'cyz', got '{kind}'")
         
     if not target_dir.exists():
-        raise FileNotFoundError(f"Directory for {kind} files not found: {target_dir}")   
+        raise FileNotFoundError(f"Directory for {kind} files not found: {target_dir} ; run `" + ("convert" if kind == "json" else "create") + "` command first")   
     
     # List all files of the specified kind
     logger.debug(f"Listing .{kind} files in {target_dir}")
