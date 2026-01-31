@@ -3,7 +3,7 @@ import ijson
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
 
 
 def _get_json_structure(json_data, prefix=""):
@@ -126,29 +126,6 @@ def _get_json_item(json_data, path):
     return current if current is not None else None
 
 
-def _get_instrument_data(json_file):
-    """
-    Load the 'instrument' section from a JSON file.
-    
-    Args:
-        json_file: Path to the JSON file.
-    Returns:
-        The 'instrument' section as a dict, or None if not found.
-    """
-    logger = logging.getLogger("cytoprocess.extract_meta")
-    logger.debug(f"Reading 'instrument' section from {json_file.name}")
-
-    with open(json_file, 'rb') as f:
-        # Use ijson to stream only the 'instrument' part
-        parser = ijson.items(f, 'instrument')
-        instrument_data = next(parser, None)
-        
-        if instrument_data is None:
-            logger.warning(f"No 'instrument' key found in {json_file.name}")
-        
-    return instrument_data
-
-
 def run(ctx, project, list_keys=False):
     logger = logging.getLogger("cytoprocess.extract_meta")
     logger.info(f"Extracting metadata from JSON files in project={project}")
@@ -167,7 +144,7 @@ def run(ctx, project, list_keys=False):
         for json_file in json_files:
             try:
                 # Load the instrument section of the json file
-                instrument_data = _get_instrument_data(json_file)
+                instrument_data = get_json_section(json_file, 'instrument')
 
                 # If it is found, extract all the metadata keys it contains
                 if instrument_data is not None:
@@ -219,7 +196,7 @@ def run(ctx, project, list_keys=False):
                 logger.debug(f"Extracting metadata from {json_file.name}")
                 
                  # Load the instrument section of the json file
-                instrument_data = _get_instrument_data(json_file)
+                instrument_data = get_json_section(json_file, 'instrument')
 
                 # If it is found, extract all the metadata keys it contains
                 if instrument_data is None:

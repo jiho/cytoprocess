@@ -1,6 +1,7 @@
 """Utility functions for cytoprocess."""
 
 import logging
+import ijson
 from pathlib import Path
 
 logger = logging.getLogger("cytoprocess.utils")
@@ -26,6 +27,34 @@ def ensure_project_dir(project: str, subdir: str) -> Path:
     target_dir = Path(project) / subdir
     target_dir.mkdir(parents=True, exist_ok=True)
     return target_dir
+
+
+def get_json_section(json_file: Path, key: str):
+    """
+    Load a specific section from a JSON file using streaming.
+    
+    Args:
+        json_file: Path to the JSON file
+        key: The top-level key to extract (e.g., 'instrument', 'particles', 'images')
+        
+    Returns:
+        The section as a dict/list, or None if not found.
+        
+    Examples:
+        >>> instrument = get_json_section(Path('data.json'), 'instrument')
+        >>> images = get_json_section(Path('data.json'), 'images')
+    """
+    logger.debug(f"Reading '{key}' section from {json_file.name}")
+
+    with open(json_file, 'rb') as f:
+        # Use ijson to stream only the specified part
+        parser = ijson.items(f, key)
+        data = next(parser, None)
+        
+        if data is None:
+            logger.warning(f"No '{key}' key found in {json_file.name}")
+        
+    return data
 
 
 def get_sample_files(project: str, kind: str = "json", ctx=None) -> list:
