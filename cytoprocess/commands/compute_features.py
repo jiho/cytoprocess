@@ -1,7 +1,213 @@
 import logging
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from skimage import io, feature, morphology, measure, filters
+from scipy import ndimage
+from cytoprocess.utils import ensure_project_dir
 
 
-def run(ctx):
-    logger = logging.getLogger("cytoprocess.extract_features")
-    logger.info("extract_features: called")
+def _segment_particle(image):
+    """
+    Segment the largest particle from an image using edge detection and morphological operations.
+    
+    Args:
+        image: Grayscale image as numpy array
+        
+    Returns:
+        Binary mask of the largest particle, or None if no particle found
+    """
+    # Apply Canny edge detection
+    edges = feature.canny(image, sigma=1.0)
+    
+    # Fill edges to create solid regions
+    filled = ndimage.binary_fill_holes(edges)
+    
+    # Apply threshold if filling didn't work well
+    if filled.sum() < 10:
+        # Use Otsu's threshold as fallback
+        thresh_val = filters.threshold_otsu(image)
+        filled = image > thresh_val
+    
+    # Morphological operations: dilate then erode (closing) to clean up
+    dilated = morphology.binary_dilation(filled, morphology.disk(2))
+    cleaned = morphology.binary_erosion(dilated, morphology.disk(2))
+    
+    # Label connected regions
+    labeled = measure.label(cleaned)
+    
+    if labeled.max() == 0:
+        return None
+    
+    # Find the largest region
+    regions = measure.regionprops(labeled)
+    if not regions:
+        return None
+    
+    largest_region = max(regions, key=lambda r: _fast_particle_area(r))
+    
+    # Create mask for largest region only
+    mask = labeled == largest_region.label
+    
+    return mask
+
+
+def _fast_particle_area(x):
+    return(np.sum(x._label_image[x._slice] == x.label))
+
+
+def _extract_features(mask, image):
+    """
+    Extract morphological and intensity features from a segmented particle.
+    
+    Args:
+        mask: Binary mask of the particle
+        image: Original grayscale image
+        
+    Returns:
+        Dictionary of features
+    """
+    # Label the mask (should be single region)
+    labeled = measure.label(mask)
+    
+    # Get region properties with intensity
+    regions = measure.regionprops(labeled, intensity_image=image)
+    
+    if not regions:
+        return None
+    
+    region = regions[0]
+    
+    # Extract requested features
+    features = {
+        'area': region.area,
+        'area_filled': region.area_filled,
+        'major': region.axis_major_length,
+        'minor': region.axis_minor_length,
+        'eccentricity': region.eccentricity,
+        'feret': region.feret_diameter_max,
+        'intensity_max': region.intensity_max,
+        'intensity_mean': region.intensity_mean,
+        'intensity_min': region.intensity_min,
+        'perimeter': region.perimeter,
+        'solidity': region.solidity,
+    }
+    
+    # Add Hu moments (7 values)
+    for i, hu_val in enumerate(region.moments_hu):
+        features[f'moments_hu_{i}'] = hu_val
+    
+    # Add weighted Hu moments (7 values)
+    for i, hu_val in enumerate(region.moments_weighted_hu):
+        features[f'moments_hu_weighted_{i}'] = hu_val
+    
+    return features
+
+
+def run(ctx, project, force=False):
+    logger = logging.getLogger("cytoprocess.compute_features")
+    logger.info(f"Computing image features in project={project}")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
+    
+    # Check images directory exists
+    images_dir = Path(project) / "images"
+    if not images_dir.exists():
+        logger.error(f"Images directory not found: {images_dir}. Run extract_images first.")
+        raise FileNotFoundError(f"Images directory not found: {images_dir}")
+    
+    # Get list of sample directories
+    sample_dirs = [d for d in images_dir.iterdir() if d.is_dir()]
+    if not sample_dirs:
+        logger.warning(f"No sample directories found in {images_dir}. Run extract_images first.")
+        return
+   
+    # Filter by sample if specified in context
+    sample = getattr(ctx, "obj", {}).get("sample")
+    if sample:
+        sample_dirs = [d for d in sample_dirs if d.name == sample]
+        if not sample_dirs:
+            logger.warning(f"No image directory found for sample '{sample}'")
+            return
+    
+    logger.info(f"Processing {len(sample_dirs)} sample(s)")
+    
+    # Ensure meta directory exists
+    meta_dir = ensure_project_dir(project, "meta")
+    
+    # Process each sample directory
+    for sample_dir in sample_dirs:
+        sample_id = sample_dir.name
+        output_file = meta_dir / f"{sample_id}_image_features.csv.gz"
+        
+        # Skip if output file exists and force is not set
+        if output_file.exists() and not force:
+            logger.info(f"Skipping {sample_id}: output file already exists (use --force to overwrite)")
+            continue
+        
+        try:
+            logger.debug(f"Processing images for sample {sample_id}")
+            
+            # Get all PNG images in sample directory
+            image_files = sorted(sample_dir.glob("*.png"))
+            
+            if not image_files:
+                logger.warning(f"No PNG images found in {sample_dir}. Run extract_images first.")
+                continue
+            
+            logger.info(f"Processing {len(image_files)} images for sample {sample_id}")
+            
+            # Prepare data structure: list of dicts, one per particle
+            rows = []
+            
+            # Process each image
+            for image_file in image_files:
+                particle_id = image_file.stem
+                
+                try:
+                    # Read image as grayscale
+                    image = io.imread(image_file, as_gray=True)
+                    
+                    # Segment the particle
+                    mask = _segment_particle(image)
+                    
+                    if mask is None:
+                        logger.debug(f"Could not segment particle {particle_id} in {sample_id}")
+                        continue
+                    
+                    # Extract features
+                    features = _extract_features(mask, image)
+                    
+                    if features is None:
+                        logger.debug(f"Could not extract features for particle {particle_id} in {sample_id}")
+                        continue
+                    
+                    # Create row with identifiers and features
+                    row = {
+                        'sample_id': sample_id,
+                        'object_id': f"{sample_id}_{particle_id}"
+                    }
+                    
+                    # Add features with object_ prefix
+                    for feat_name, feat_val in features.items():
+                        row[f"object_{feat_name}"] = feat_val
+                    
+                    rows.append(row)
+                    
+                except Exception as e:
+                    logger.warning(f"Error processing image {image_file.name}: {e}")
+                    continue
+            
+            if not rows:
+                logger.warning(f"No features extracted from sample {sample_id}")
+                continue
+            
+            # Create DataFrame and save to CSV
+            df = pd.DataFrame(rows)
+            df = df.sort_values('object_id').reset_index(drop=True)
+            df.to_csv(output_file, index=False, compression='gzip')
+            
+            logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to {output_file}")
+            
+        except Exception as e:
+            logger.error(f"Error processing sample {sample_id}: {e}")
+            raise

@@ -117,11 +117,13 @@ def extract_images(ctx, project, force):
 
 
 @cli.command(name="compute_features")
+@click.argument("project")
+@click.option("--force", is_flag=True, default=False, help="Force processing even if output files already exist")
 @click.pass_context
-def compute_features(ctx):
+def compute_features(ctx, project, force):
     """Compute features from extracted images."""
     from cytoprocess.commands import compute_features
-    compute_features.run(ctx)
+    compute_features.run(ctx, project=project, force=force)
 
 
 @cli.command()
@@ -177,7 +179,7 @@ def _all(ctx, project, force):
         extract_images.run(ctx, project=project, force=force)
         
         logger.info("Step 6/8: Computing features from images")
-        compute_features.run(ctx)
+        compute_features.run(ctx, project=project, force=force)
         
         logger.info("Step 7/8: Preparing files for EcoTaxa")
         prepare.run(ctx)
