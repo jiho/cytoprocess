@@ -85,3 +85,5 @@ def run(ctx, project, force=False):
             raise
     
     logger.info(f"Total images extracted: {total_images}")
+
+# TODO add a way to post process the images to remove the background and crop them when they are full frames
