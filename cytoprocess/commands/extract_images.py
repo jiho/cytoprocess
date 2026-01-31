@@ -49,31 +49,31 @@ def run(ctx, project, force=False):
             
             image_count = 0
             for image in images:
-                    # Extract particleId and base64 data
-                    particle_id = image.get('particleId')
-                    base64_data = image.get('base64')
-                    
-                    if particle_id is None:
-                        logger.warning(f"Image item missing 'particleId' in {json_file.name}")
-                        continue
-                    
-                    if base64_data is None:
-                        logger.warning(f"Image item {particle_id} missing 'base64' data in {json_file.name}")
-                        continue
-                    
-                    # Decode base64 data
-                    try:
-                        image_data = base64.b64decode(base64_data)
-                    except Exception as e:
-                        logger.error(f"Failed to decode base64 for particle {particle_id} in {json_file.name}: {e}")
-                        continue
-                    
-                    # Write to PNG file
-                    output_file = sample_images_dir / f"{particle_id}.png"
-                    with open(output_file, 'wb') as img_file:
-                        img_file.write(image_data)
-                    
-                    image_count += 1
+                # Extract particleId and base64 data
+                particle_id = image.get('particleId')
+                base64_data = image.get('base64')
+                
+                if particle_id is None:
+                    logger.warning(f"Image item missing 'particleId' in {json_file.name}")
+                    continue
+                
+                if base64_data is None:
+                    logger.warning(f"Image item {particle_id} missing 'base64' data in {json_file.name}")
+                    continue
+                
+                # Decode base64 data
+                try:
+                    image_data = base64.b64decode(base64_data)
+                except Exception as e:
+                    logger.error(f"Failed to decode base64 for particle {particle_id} in {json_file.name}: {e}")
+                    continue
+                
+                # Write to PNG file
+                output_file = sample_images_dir / f"{particle_id}.png"
+                with open(output_file, 'wb') as img_file:
+                    img_file.write(image_data)
+                
+                image_count += 1
                     
             logger.info(f"Extracted {image_count} images from {json_file.name}")
             total_images += image_count
