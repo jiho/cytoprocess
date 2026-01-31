@@ -37,12 +37,12 @@ CytoProcess uses the concept of "project". A project corresponds conceptually to
 
 ```
 my_project/
-    config     configuration file
-    converted  .json files converted from .cyz by Cyz2Json
-    ecotaxa    .zip files ready for upload in EcoTaxa
-    images     images extracted from the .json files, in one subdirectory per file
-    meta       metadata files extracted from the .json files
-    raw        source .cyz files
+    raw         source .cyz files
+    converted   .json files converted from .cyz by Cyz2Json
+    meta        metadata files extracted from the .json files
+    images      images extracted from the .json files, in one subdirectory per file
+    ecotaxa     .zip files ready for upload in EcoTaxa
+    config.yaml configuration file
 ```
 
 Each .cyz file is considered as a "sample" (and will correspond to an EcoTaxa sample).

@@ -178,9 +178,9 @@ def run(ctx, project, list_keys=False):
         logger.info(f"Keys written to {keys_file}")
 
     else:
-        # Otherwise, in normal operations, extract specific metadata items based on metadata_config.yaml
+        # Otherwise, in normal operations, extract specific metadata items based on config.yaml
 
-        config_file = Path(project) / "config" / "metadata_config.yaml"
+        config_file = Path(project) / "config.yaml"
         
         if not config_file.exists():
             logger.error(f"Configuration file not found: {config_file}")
