@@ -32,17 +32,16 @@ conda activate cytoprocess
 
 ## Usage
 
-
 CytoProcess uses the concept of "project". A project corresponds conceptually to a cruise, a time series, etc. Practically, it is a directory with a specific set of subdirectories that contain all files related to the cruise/time series/etc. It corresponds to a single EcoTaxa project.
 
 ```
 my_project/
+    config.yaml configuration file
     raw         source .cyz files
     converted   .json files converted from .cyz by Cyz2Json
     meta        metadata files extracted from the .json files
     images      images extracted from the .json files, in one subdirectory per file
     ecotaxa     .zip files ready for upload in EcoTaxa
-    config.yaml configuration file
 ```
 
 Each .cyz file is considered as a "sample" (and will correspond to an EcoTaxa sample).
@@ -75,7 +74,7 @@ cytoprocess create path/to/my_project
 
 Then copy/move the .cyz files you want to include in `my_project/raw`. If you have an archive of .cyz files organised differently, you should be able to symlink them in `my_project/raw` instead of copying them.
 
-### Processing the samples in a project
+### Processing samples in a project
 
 TL;DR
 
@@ -83,7 +82,9 @@ TL;DR
 cytoprocess all path/to/my_project
 ```
 
-This performs all processing steps, for all samples, with default options. The detail is
+This performs all processing steps, for all samples, with default options.
+
+The detail is
 
 ```bash
 # convert .cyz files into .json
