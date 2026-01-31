@@ -103,7 +103,7 @@ def get_sample_files(project: str, kind: str = "json", ctx=None) -> list:
     if sample:
         files = [f for f in files if f.stem == sample]
         if len(files) == 0:
-            logger.warning(f"No .{kind} files found matching sample '{sample}' in {target_dir}")
+            logger.warning(f"No .{kind} files found for sample '{sample}' in {target_dir}")
         else:
             logger.debug(f"Found file '{files[0].name}' matching sample '{sample}'")
     
