@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from cytoprocess.utils import get_sample_files
+from cytoprocess.utils import get_sample_files, ensure_project_dir
 
 
 def run(ctx, project, force=False):
@@ -15,9 +15,6 @@ def run(ctx, project, force=False):
     # Get .cyz files from raw directory
     cyz_files = get_sample_files(project, kind="cyz", ctx=ctx)
     
-    # Define converted directory
-    converted_dir = Path(project) / "converted"
-    
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")
     from cytoprocess.commands import install
@@ -28,8 +25,8 @@ def run(ctx, project, force=False):
         raise
         
     # Create processed directory if it doesn't exist
-    logger.debug(f"Checking if directory {converted_dir} exists and creating if necessary")
-    converted_dir.mkdir(parents=True, exist_ok=True)
+    converted_dir = ensure_project_dir(project, "converted")
+    logger.debug(f"Ensured converted directory exists: {converted_dir}")
 
     # Convert each .cyz file
     for cyz_file in cyz_files:

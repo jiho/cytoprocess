@@ -3,6 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
+from cytoprocess.utils import ensure_project_dir
+
 
 def run(ctx, project):
     logger = logging.getLogger("cytoprocess.create")
@@ -14,15 +16,14 @@ def run(ctx, project):
         logger.info(f"Project directory {project} already exists.")
     else:
         logger.info(f"Creating project directory {project}.")
-        os.makedirs(project, exist_ok=True)
+        ensure_project_dir(project, "")
     
     # List of subdirectories to create
     subdirectories = ["raw", "converted", "work", "config", "meta", "ecotaxa"]
     
     # Create each subdirectory
     for subdir in subdirectories:
-        subdir_path = os.path.join(project, subdir)
-        os.makedirs(subdir_path, exist_ok=True)
+        subdir_path = ensure_project_dir(project, subdir)
         logger.debug(f"Created subdirectory: {subdir_path}")
     
     # Copy metadata configuration template to config directory

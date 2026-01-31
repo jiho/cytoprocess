@@ -3,7 +3,7 @@ import ijson
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files
+from cytoprocess.utils import get_sample_files, ensure_project_dir
 
 
 def _get_json_structure(json_data, prefix=""):
@@ -188,9 +188,7 @@ def run(ctx, project, list_keys=False):
             logger.info(f"Found {len(keys)} unique metadata items across all JSON files")
 
         # Make sure config directory exists
-        config_dir = Path(project) / "config"
-        config_dir.mkdir(parents=True, exist_ok=True)
-        # TODO wrap this into a function in utils.py and use it elsewhere
+        config_dir = ensure_project_dir(project, "config")
 
         # Write keys to file
         keys_file = config_dir / "available_metadata_keys.txt"
@@ -265,8 +263,7 @@ def run(ctx, project, list_keys=False):
                 raise
         
         # Save to CSV in meta directory
-        meta_dir = Path(project) / "meta"
-        meta_dir.mkdir(parents=True, exist_ok=True)
+        meta_dir = ensure_project_dir(project, "meta")
         output_file = meta_dir / "instrument_metadata.csv"
         logger.info(f"Saving metadata to {output_file}")
         
