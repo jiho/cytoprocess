@@ -137,11 +137,55 @@ def upload(ctx):
 
 
 @cli.command(name="all")
+@click.argument("project")
+@click.option("--force", is_flag=True, default=False, help="Force re-processing even if output already exists")
 @click.pass_context
-def _all(ctx):
-    from cytoprocess.commands import all as all_cmd
+def _all(ctx, project, force):
+    """Run all processing steps in sequence"""
+    from cytoprocess.commands import (
+        convert,
+        extract_meta,
+        extract_cyto,
+        summarise_pulses,
+        extract_images,
+        compute_features,
+        prepare,
+        upload,
+    )
+    
+    logger = logging.getLogger("cytoprocess.cli")
+    logger.info(f"Running all processing steps for project: {project}")
+    
+    try:
+        logger.info("Step 1/8: Converting .cyz files to .json")
+        convert.run(ctx, project=project, force=force)
+        
+        logger.info("Step 2/8: Extracting metadata")
+        extract_meta.run(ctx, project=project, list_keys=False)
 
-    all_cmd.run(ctx)
+        logger.info("Step 3/8: Extracting cytometric features")
+        extract_cyto.run(ctx)
+        
+        logger.info("Step 4/8: Summarising pulse shapes")
+        summarise_pulses.run(ctx)
+
+        logger.info("Step 5/8: Extracting images")
+        extract_images.run(ctx, project=project, force=force)
+        
+        logger.info("Step 6/8: Computing features from images")
+        compute_features.run(ctx)
+        
+        logger.info("Step 7/8: Preparing files for EcoTaxa")
+        prepare.run(ctx)
+        
+        logger.info("Step 8/8: Uploading to EcoTaxa")
+        upload.run(ctx)
+        
+        logger.info("All processing steps completed successfully")
+        
+    except Exception as e:
+        logger.error(f"Processing failed at one of the steps: {e}")
+        raise
 
 
 def main(argv=None):
