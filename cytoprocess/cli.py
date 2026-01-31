@@ -1,3 +1,9 @@
+#
+# Command line interface for CytoProcess
+#
+# This consists of a main command (cytoprocess) with subcommands for each processing step.
+#
+
 import logging
 import sys
 import click
@@ -37,7 +43,6 @@ def cli(ctx, debug, sample):
 @click.pass_context
 def create(ctx, project):
     from cytoprocess.commands import create
-
     create.run(ctx, project=project)
 
 
@@ -45,7 +50,6 @@ def create(ctx, project):
 @click.pass_context
 def install(ctx):
     from cytoprocess.commands import install
-
     install.run(ctx)
 
 
@@ -55,7 +59,6 @@ def install(ctx):
 @click.pass_context
 def convert(ctx, project, force):
     from cytoprocess.commands import convert
-
     convert.run(ctx, project=project, force=force)
 
 
@@ -64,8 +67,8 @@ def convert(ctx, project, force):
 @click.pass_context
 def cleanup(ctx, project):
     from cytoprocess.commands import cleanup
-
     cleanup.run(ctx, project=project)
+
 
 @cli.command(name="extract_meta")
 @click.argument("project")
@@ -73,25 +76,22 @@ def cleanup(ctx, project):
 @click.pass_context
 def extract_meta(ctx, project, list_keys):
     from cytoprocess.commands import extract_meta
-
     extract_meta.run(ctx, project=project, list_keys=list_keys)
 
 
-@cli.command(name="extract_list")
+@cli.command(name="extract_cyto")
 @click.pass_context
-def extract_list(ctx):
-    from cytoprocess.commands import extract_list
+def extract_cyto(ctx):
+    from cytoprocess.commands import extract_cyto
+    extract_cyto.run(ctx)
 
-    extract_list.run(ctx)
 
-
-@cli.command(name="extract_pulses")
+@cli.command(name="summarise_pulses")
 @click.option("--n-poly", default=10, help="Number of degrees in polynomial approximation")
 @click.pass_context
-def extract_pulses(ctx, n_poly):
-    from cytoprocess.commands import extract_pulses
-
-    extract_pulses.run(ctx, n_poly=n_poly)
+def summarise_pulses(ctx, n_poly):
+    from cytoprocess.commands import summarise_pulses
+    summarise_pulses.run(ctx, n_poly=n_poly)
 
 
 @cli.command(name="extract_images")
@@ -100,31 +100,20 @@ def extract_pulses(ctx, n_poly):
 @click.pass_context
 def extract_images(ctx, project, force):
     from cytoprocess.commands import extract_images
-
     extract_images.run(ctx, project, force=force)
 
 
-@cli.command(name="extract_features")
+@cli.command(name="compute_features")
 @click.pass_context
-def extract_features(ctx):
-    from cytoprocess.commands import extract_features
-
-    extract_features.run(ctx)
-
-
-@cli.command(name="extract_all")
-@click.pass_context
-def extract_all(ctx):
-    from cytoprocess.commands import extract_all
-
-    extract_all.run(ctx)
+def compute_features(ctx):
+    from cytoprocess.commands import compute_features
+    compute_features.run(ctx)
 
 
 @cli.command()
 @click.pass_context
 def prepare(ctx):
     from cytoprocess.commands import prepare
-
     prepare.run(ctx)
 
 
@@ -132,7 +121,6 @@ def prepare(ctx):
 @click.pass_context
 def upload(ctx):
     from cytoprocess.commands import upload
-
     upload.run(ctx)
 
 
