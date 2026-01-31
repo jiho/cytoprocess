@@ -15,8 +15,10 @@ def run(ctx, project, force=False):
     
     # Get JSON files from converted directory
     json_files = get_sample_files(project, kind="json", ctx=ctx)
-    
-    logger.info(f"Processing {len(json_files)} JSON file(s)")
+    if not json_files:
+        return
+   
+    logger.info(f"Processing {len(json_files)} .json file(s)")
     
     # Process each JSON file
     total_images = 0

@@ -14,6 +14,8 @@ def run(ctx, project, force=False):
     
     # Get .cyz files from raw directory
     cyz_files = get_sample_files(project, kind="cyz", ctx=ctx)
+    if (not cyz_files):
+        return
     
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")

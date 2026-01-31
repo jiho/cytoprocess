@@ -133,8 +133,10 @@ def run(ctx, project, list_keys=False):
         
     # Get JSON files from converted directory
     json_files = get_sample_files(project, kind="json", ctx=ctx)
+    if not json_files:
+        return
         
-    logger.info(f"Processing {len(json_files)} JSON file(s)")
+    logger.info(f"Processing {len(json_files)} .json file(s)")
         
     if list_keys:
         # If the --list argument is provided, extract metadata keys from each JSON file and store them in a text file
