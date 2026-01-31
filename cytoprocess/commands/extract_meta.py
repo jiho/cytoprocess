@@ -251,6 +251,7 @@ def run(ctx, project, list_keys=False):
 
         # Check if the CSV file already exists
         if output_file.exists():
+            # TODO consider requiring --force here like in other commands
             logger.debug(f"Metadata file exists, updating rows")
             existing_df = pd.read_csv(output_file)
             
