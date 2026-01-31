@@ -177,20 +177,20 @@ def run(ctx, project, force=False, max_cores=None):
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:
-            logger.info(f"Skipping {sample_id}: output file already exists (use --force to overwrite)")
+            logger.info(f"Skipping '{sample_id}': output file already exists (use --force to overwrite)")
             continue
         
         try:
-            logger.debug(f"Processing images for sample {sample_id}")
+            logger.debug(f"Processing images for sample '{sample_id}'")
             
             # Get all PNG images in sample directory
             image_files = sorted(sample_dir.glob("*.png"))
             
             if not image_files:
-                logger.warning(f"No PNG images found in {sample_dir}. Run extract_images first.")
+                logger.warning(f"No PNG images found in '{sample_dir}'. Run extract_images first.")
                 continue
             
-            logger.info(f"Processing {len(image_files)} images for sample {sample_id}")
+            logger.info(f"Processing {len(image_files)} images for sample '{sample_id}'")
             
             # Prepare arguments for parallel processing
             args_list = [(image_file, sample_id) for image_file in image_files]
