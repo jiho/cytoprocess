@@ -78,7 +78,7 @@ def _extract_features(mask, image):
     # Extract relevant features
     props = ['area', 'area_filled', 'axis_major_length', 'axis_minor_length', 
              'eccentricity', 'feret_diameter_max', 'intensity_max', 'intensity_mean',
-             'intensity_min', 'perimeter', 'solidity', 'moments_hu', 'moments_weighted_hu']
+             'intensity_median', 'intensity_min', 'instensity_std', 'perimeter', 'solidity']
     features_table = measure.regionprops_table(labeled, intensity_image=image, properties=props)
     
     return features_table
