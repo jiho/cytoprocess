@@ -20,8 +20,8 @@ def _configure_logging(debug: bool):
 # TODO log to console and to a file in the logs/ directory of the project
 
 @click.group()
-@click.option("--debug", is_flag=True, default=False, help="Enable debug logging")
-@click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file")
+@click.option("--debug", is_flag=True, default=False, help="Show debugging messages.")
+@click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file.")
 @click.pass_context
 def cli(ctx, debug, sample):
     """CytoProcess command line interface."""
@@ -42,6 +42,7 @@ def cli(ctx, debug, sample):
 @click.argument("project")
 @click.pass_context
 def create(ctx, project):
+    """Create a new CytoProcess project directory."""
     from cytoprocess.commands import create
     create.run(ctx, project=project)
 
@@ -49,15 +50,17 @@ def create(ctx, project):
 @cli.command()
 @click.pass_context
 def install(ctx):
+    """Install depency: Cyz2Json converter."""
     from cytoprocess.commands import install
     install.run(ctx)
 
 
 @cli.command()
 @click.argument("project")
-@click.option("--force", is_flag=True, default=False, help="Force conversion even if JSON files already exist")
+@click.option("--force", is_flag=True, default=False, help="Force conversion even if .json files already exist")
 @click.pass_context
 def convert(ctx, project, force):
+    """Convert .cyz files to .json format."""
     from cytoprocess.commands import convert
     convert.run(ctx, project=project, force=force)
 
@@ -66,25 +69,28 @@ def convert(ctx, project, force):
 @click.argument("project")
 @click.pass_context
 def cleanup(ctx, project):
+    """Clean up intermediate files in the project directory."""
     from cytoprocess.commands import cleanup
     cleanup.run(ctx, project=project)
 
 
 @cli.command(name="extract_meta")
 @click.argument("project")
-@click.option("--list", "list_keys", is_flag=True, default=False, help="List all metadata items found in the JSON file(s) instead of extracting some of them")
+@click.option("--list", "list_keys", is_flag=True, default=False, help="List all metadata items found in the .json file(s) instead of extracting some of them")
 @click.pass_context
 def extract_meta(ctx, project, list_keys):
+    """Extract sample metadata from .json files."""
     from cytoprocess.commands import extract_meta
     extract_meta.run(ctx, project=project, list_keys=list_keys)
 
 
 @cli.command(name="extract_cyto")
 @click.argument("project")
-@click.option("--list", "list_keys", is_flag=True, default=False, help="List all cytometric parameter paths found in the JSON file(s) instead of extracting some of them")
+@click.option("--list", "list_keys", is_flag=True, default=False, help="List all cytometric fields paths found in the .json file(s) instead of extracting some of them")
 @click.option("--force", is_flag=True, default=False, help="Force extraction even if output files already exist")
 @click.pass_context
 def extract_cyto(ctx, project, list_keys, force):
+    """Extract cytometric features from .json files."""
     from cytoprocess.commands import extract_cyto
     extract_cyto.run(ctx, project=project, list_keys=list_keys, force=force)
 
@@ -95,15 +101,17 @@ def extract_cyto(ctx, project, list_keys, force):
 @click.option("--force", is_flag=True, default=False, help="Force processing even if output files already exist")
 @click.pass_context
 def summarise_pulses(ctx, project, n_poly, force):
+    """Summarise pulse shapes."""
     from cytoprocess.commands import summarise_pulses
     summarise_pulses.run(ctx, project=project, n_poly=n_poly, force=force)
 
 
 @cli.command(name="extract_images")
 @click.argument("project", type=click.Path(exists=True))
-@click.option("--force", is_flag=True, help="Overwrite existing image directories")
+@click.option("--force", is_flag=True, help="Force extraction even if output files already exist")
 @click.pass_context
 def extract_images(ctx, project, force):
+    """Extract images from .json files."""
     from cytoprocess.commands import extract_images
     extract_images.run(ctx, project, force=force)
 
@@ -111,6 +119,7 @@ def extract_images(ctx, project, force):
 @cli.command(name="compute_features")
 @click.pass_context
 def compute_features(ctx):
+    """Compute features from extracted images."""
     from cytoprocess.commands import compute_features
     compute_features.run(ctx)
 
@@ -118,6 +127,7 @@ def compute_features(ctx):
 @cli.command()
 @click.pass_context
 def prepare(ctx):
+    """Prepare .tsv and images for EcoTaxa."""
     from cytoprocess.commands import prepare
     prepare.run(ctx)
 
@@ -125,16 +135,17 @@ def prepare(ctx):
 @cli.command()
 @click.pass_context
 def upload(ctx):
+    """Upload files to EcoTaxa."""
     from cytoprocess.commands import upload
     upload.run(ctx)
 
 
 @cli.command(name="all")
 @click.argument("project")
-@click.option("--force", is_flag=True, default=False, help="Force re-processing even if output already exists")
+@click.option("--force", is_flag=True, default=False, help="Force processing even if output already exists")
 @click.pass_context
 def _all(ctx, project, force):
-    """Run all processing steps in sequence"""
+    """Run all processing steps in sequence."""
     from cytoprocess.commands import (
         convert,
         extract_meta,
