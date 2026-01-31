@@ -96,11 +96,12 @@ def extract_pulses(ctx, n_poly):
 
 @cli.command(name="extract_images")
 @click.argument("project", type=click.Path(exists=True))
+@click.option("--force", is_flag=True, help="Overwrite existing image directories")
 @click.pass_context
-def extract_images(ctx, project):
+def extract_images(ctx, project, force):
     from cytoprocess.commands import extract_images
 
-    extract_images.run(ctx, project)
+    extract_images.run(ctx, project, force=force)
 
 
 @cli.command(name="extract_features")

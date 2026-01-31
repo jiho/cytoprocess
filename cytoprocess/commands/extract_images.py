@@ -1,12 +1,16 @@
 import logging
 import base64
+import shutil
 from pathlib import Path
 from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
 
 
-def run(ctx, project):
+def run(ctx, project, force=False):
     logger = logging.getLogger("cytoprocess.extract_images")
     logger.info(f"Extracting images from JSON files in project={project}")
+    
+    if force:
+        logger.debug("Force flag enabled - existing image directories will be removed and recreated")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get JSON files from converted directory
@@ -20,8 +24,20 @@ def run(ctx, project):
         try:
             logger.debug(f"Extracting images from {json_file.name}")
             
-            # Create subdirectory for this sample's images
+            # Define subdirectory for this sample's images
             sample_name = json_file.stem
+            sample_images_dir = Path(project) / "images" / sample_name
+            
+            # Check if directory already exists
+            if sample_images_dir.exists():
+                if force:
+                    logger.info(f"Removing existing directory: {sample_images_dir}")
+                    shutil.rmtree(sample_images_dir)
+                else:
+                    logger.warning(f"Directory already exists, skipping {json_file.name}. Use --force to overwrite.")
+                    continue
+            
+            # Create the directory
             sample_images_dir = ensure_project_dir(project, f"images/{sample_name}")
             
             # Load the images section from the JSON file
