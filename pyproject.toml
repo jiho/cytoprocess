@@ -6,7 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "cytoprocess"
 version = "0.0.1"
 description = "Package to process images from a CytoSense file"
-dependencies = ["click"]
+dependencies = [
+    "click>=8.0",
+    "ijson>=3.0",
+    "pandas>=1.3.0",
+    "pyyaml>=5.4"
+]
 
 [project.scripts]
 cytoprocess = "cytoprocess.cli:main"
