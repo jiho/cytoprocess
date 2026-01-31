@@ -80,10 +80,13 @@ def extract_meta(ctx, project, list_keys):
 
 
 @cli.command(name="extract_cyto")
+@click.argument("project")
+@click.option("--list", "list_keys", is_flag=True, default=False, help="List all cytometric parameter paths found in the JSON file(s) instead of extracting some of them")
+@click.option("--force", is_flag=True, default=False, help="Force extraction even if output files already exist")
 @click.pass_context
-def extract_cyto(ctx):
+def extract_cyto(ctx, project, list_keys, force):
     from cytoprocess.commands import extract_cyto
-    extract_cyto.run(ctx)
+    extract_cyto.run(ctx, project=project, list_keys=list_keys, force=force)
 
 
 @cli.command(name="summarise_pulses")
@@ -152,7 +155,7 @@ def _all(ctx, project, force):
         extract_meta.run(ctx, project=project, list_keys=False)
 
         logger.info("Step 3/8: Extracting cytometric features")
-        extract_cyto.run(ctx)
+        extract_cyto.run(ctx, project=project, list_keys=False, force=force)
         
         logger.info("Step 4/8: Summarising pulse shapes")
         summarise_pulses.run(ctx)

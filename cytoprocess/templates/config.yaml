@@ -51,3 +51,35 @@ process:
   measurementResults.pictureCount: picture_count
   measurementSettings.CytoSettings.CytoSettings.iif.opticalMagnification: iif_optical_magnification
   measurementSettings.CytoSettings.CytoSettings.triggerlevelConstant: trigger_level_constant
+
+
+# This part maps cytometric features from particles in the .json files to
+# column names for import into EcoTaxa.
+#
+# Object-level features are extracted from each particle's "parameters" list.
+# Paths are in the format "description.key" where description identifies
+# the parameter (e.g., "FWS", "Sidewards Scatter", "Fl Red") and key is the
+# specific measurement (e.g., "length", "total", "maximum").
+#
+# Run `cytoprocess extract_cyto <project> --list` to see all available paths.
+object:
+  FWS.length: fws_length
+  FWS.total: fws_total
+  FWS.maximum: fws_maximum
+  FWS.average: fws_average
+  FWS.inertia: fws_inertia
+  FWS.centreOfGravity: fws_cog
+  FWS.fillFactor: fws_fill_factor
+  FWS.asymmetry: fws_asymmetry
+  FWS.numberOfCells: fws_num_cells
+  Sidewards Scatter.length: sws_length
+  Sidewards Scatter.total: sws_total
+  Sidewards Scatter.maximum: sws_maximum
+  Sidewards Scatter.average: sws_average
+  Fl Yellow.total: fl_yellow_total
+  Fl Yellow.maximum: fl_yellow_maximum
+  Fl Orange.total: fl_orange_total
+  Fl Orange.maximum: fl_orange_maximum
+  Fl Red.total: fl_red_total
+  Fl Red.maximum: fl_red_maximum
+  Curvature.average: curvature_average
