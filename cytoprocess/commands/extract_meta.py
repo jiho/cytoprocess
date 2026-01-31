@@ -264,15 +264,33 @@ def run(ctx, project, list_keys=False):
                 logger.error(f"Error processing {json_file.name}: {e}")
                 raise
         
-        # Create DataFrame
-        df = pd.DataFrame(metadata_rows)
-                
         # Save to CSV in meta directory
         meta_dir = Path(project) / "meta"
         meta_dir.mkdir(parents=True, exist_ok=True)
         output_file = meta_dir / "instrument_metadata.csv"
+        logger.info(f"Saving metadata to {output_file}")
         
+        # Create DataFrame from newly extracted metadata
+        new_df = pd.DataFrame(metadata_rows)
+
+        # Check if the CSV file already exists
+        if output_file.exists():
+            logger.debug(f"Metadata file exists, updating rows")
+            existing_df = pd.read_csv(output_file)
+            
+            # Remove rows from existing_df that have the same sample_id as in new_df
+            existing_df = existing_df[~existing_df['sample_id'].isin(new_df['sample_id'])]
+
+            logger.debug(f"Updating/appending {len(new_df)} row(s)")
+            df = pd.concat([existing_df, new_df], ignore_index=True)
+
+        else:
+            logger.debug(f"Creating new metadata file")
+            df = new_df
+        
+        # Sort by sample_id, for consistency
+        df = df.sort_values('sample_id').reset_index(drop=True)
+
         df.to_csv(output_file, index=False)
-        logger.info(f"Metadata extracted and saved to {output_file}")
-        logger.debug(f"DataFrame shape: {df.shape[0]} rows × {df.shape[1]} columns")
+        logger.debug(f"Metadata shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
