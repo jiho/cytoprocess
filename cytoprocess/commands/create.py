@@ -19,7 +19,8 @@ def run(ctx, project):
         ensure_project_dir(project, "")
     
     # List of subdirectories to create
-    subdirectories = ["raw", "converted", "work", "config", "meta", "ecotaxa"]
+    # NB: others will be created on the fly by the other commands
+    subdirectories = ["raw", "config"]
     
     # Create each subdirectory
     for subdir in subdirectories:
