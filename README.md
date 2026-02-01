@@ -21,10 +21,10 @@ CytoProcess depends on [Cyz2Json](https://github.com/OBAMANEXT/cyz2json). To ins
 cytoprocess install
 ```
 
-NB: As for all things Python, you should preferrably install CytoProcess within a Python venv/coda environment. The package is tested with Python=3.10 and should therefore work with this or a more recent version. To create a conda environment, use
+NB: As for all things Python, you should preferrably install CytoProcess within a Python venv/coda environment. The package is tested with Python=3.11 and should therefore work with this or a more recent version. To create a conda environment, use
 
 ```bash
-conda create -n cytoprocess python=3.10
+conda create -n cytoprocess python=3.11
 conda activate cytoprocess
 ```
 

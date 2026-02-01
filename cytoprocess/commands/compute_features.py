@@ -32,8 +32,8 @@ def _segment_particle(image):
         filled = image > thresh_val
     
     # Morphological operations: dilate then erode (closing) to clean up
-    dilated = morphology.binary_dilation(filled, morphology.disk(2))
-    cleaned = morphology.binary_erosion(dilated, morphology.disk(2))
+    dilated = morphology.dilation(filled, morphology.disk(2))
+    cleaned = morphology.erosion(dilated, morphology.disk(2))
     
     # Label connected regions
     labeled = measure.label(cleaned)
