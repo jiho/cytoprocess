@@ -245,7 +245,7 @@ def run(ctx, project, list_keys=False):
         
         # Save to CSV in meta directory
         meta_dir = ensure_project_dir(project, "meta")
-        output_file = meta_dir / "instrument_metadata.csv"
+        output_file = meta_dir / "sample_metadata.csv"
         logger.info(f"Saving metadata to '{output_file}'")
         
         # Create DataFrame from newly extracted metadata
