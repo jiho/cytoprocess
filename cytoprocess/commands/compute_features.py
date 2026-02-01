@@ -169,13 +169,13 @@ def run(ctx, project, force=False, max_cores=None):
     
     logger.info(f"Processing {len(sample_dirs)} sample(s)")
     
-    # Ensure meta directory exists
-    meta_dir = ensure_project_dir(project, "meta")
+    # Ensure work directory exists
+    work_dir = ensure_project_dir(project, "work")
     
     # Process each sample directory
     for sample_dir in sample_dirs:
         sample_id = sample_dir.name
-        output_file = meta_dir / f"{sample_id}_image_features.parquet"
+        output_file = work_dir / f"{sample_id}_image_features.parquet"
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:

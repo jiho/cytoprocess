@@ -22,7 +22,7 @@ def run(ctx, project):
     
     # List of subdirectories to create
     # NB: others will be created on the fly by the other commands
-    subdirectories = ["raw"]
+    subdirectories = ["raw", "meta"]
     
     # Create each subdirectory
     for subdir in subdirectories:

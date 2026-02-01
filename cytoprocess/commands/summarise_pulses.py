@@ -56,13 +56,13 @@ def run(ctx, project, n_poly=10, force=False):
     
     logger.info(f"Processing {len(json_files)} .json file(s)")
     
-    # Ensure meta directory exists
-    meta_dir = ensure_project_dir(project, "meta")
+    # Ensure work directory exists
+    work_dir = ensure_project_dir(project, "work")
     
     # Process each JSON file and write one Parquet per sample
     for json_file in json_files:
         sample_id = json_file.stem
-        output_file = meta_dir / f"{sample_id}_pulses.parquet"
+        output_file = work_dir / f"{sample_id}_pulses.parquet"
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:

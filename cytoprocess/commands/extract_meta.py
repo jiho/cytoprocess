@@ -243,19 +243,19 @@ def run(ctx, project, list_keys=False):
                 logger.error(f"Error processing '{json_file.name}': {e}")
                 raise
         
-        # Save to CSV in meta directory
-        meta_dir = ensure_project_dir(project, "meta")
-        output_file = meta_dir / "sample_metadata_from_instrument.parquet"
+        # Save to paquet in work directory
+        work_dir = ensure_project_dir(project, "work")
+        output_file = work_dir / "sample_metadata_from_instrument.parquet"
         logger.info(f"Saving metadata to '{output_file}'")
         
         # Create DataFrame from newly extracted metadata
         new_df = pd.DataFrame(metadata_rows)
 
-        # Check if the CSV file already exists
+        # Check if the parquet file already exists
         if output_file.exists():
             # TODO consider requiring --force here like in other commands
             logger.debug(f"Metadata file exists, updating rows")
-            existing_df = pd.read_csv(output_file)
+            existing_df = pd.read_parquet(output_file)
             
             # Remove rows from existing_df that have the same sample_id as in new_df
             existing_df = existing_df[~existing_df['sample_id'].isin(new_df['sample_id'])]

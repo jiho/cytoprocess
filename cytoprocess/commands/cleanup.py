@@ -41,8 +41,8 @@ def run(ctx, project):
     _remove_directory(converted_dir, logger)
 
     # Remove intermediate storage for metadata
-    meta_dir = Path(project) / "meta"
-    _remove_directory(meta_dir, logger)
+    work_dir = Path(project) / "work"
+    _remove_directory(work_dir, logger)
 
     # Remove directory with individual images
     images_dir = Path(project) / "images"

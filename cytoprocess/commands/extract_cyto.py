@@ -169,13 +169,13 @@ def run(ctx, project, list_keys=False, force=False):
         
         logger.debug(f"Found {len(object_config)} mappings in 'object' section")
         
-        # Ensure meta directory exists, to store output files
-        meta_dir = ensure_project_dir(project, "meta")
+        # Ensure work directory exists, to store output files
+        work_dir = ensure_project_dir(project, "work")
         
         # Process each JSON file and write one Parquet per sample
         for json_file in json_files:
             sample_id = json_file.stem
-            output_file = meta_dir / f"{sample_id}_cytometric_features.parquet"
+            output_file = work_dir / f"{sample_id}_cytometric_features.parquet"
             
             # Skip if output file exists and force is not set
             if output_file.exists() and not force:

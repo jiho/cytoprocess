@@ -37,8 +37,8 @@ my_project/
     config.yaml configuration file
     raw         source .cyz files
     converted   .json files converted from .cyz by Cyz2Json
-    meta        metadata files extracted from the .json files
     images      images extracted from the .json files, in one subdirectory per file
+    work        information extracted by the various processing steps (metadata, pulses, features, etc.)
     ecotaxa     .zip files ready for upload in EcoTaxa
     logs        logs of all commands executed on this project, per day
 ```
