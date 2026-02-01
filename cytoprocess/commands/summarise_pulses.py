@@ -74,7 +74,8 @@ def run(ctx, project, n_poly=10, force=False):
             
             # Load the particles section of the json file
             particles_data = get_json_section(json_file, 'particles')
-            
+            # TODO limit to particles with images
+
             if particles_data is None or len(particles_data) == 0:
                 logger.warning(f"No particles found in '{json_file.name}'")
                 continue
