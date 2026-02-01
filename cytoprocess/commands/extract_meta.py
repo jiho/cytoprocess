@@ -198,8 +198,8 @@ def run(ctx, project, list_keys=False):
         for json_file in json_files:
             try:
                 logger.debug(f"Extracting metadata from '{json_file.name}'")
-                
-                 # Load the instrument section of the json file
+
+                # Load the instrument section of the json file
                 instrument_data = get_json_section(json_file, 'instrument')
 
                 # If it is found, extract all the metadata keys it contains
