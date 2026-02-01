@@ -100,6 +100,7 @@ def run(ctx, project, force=False):
         
         # Get sample metadata
         samples_df = metadata_df[metadata_df['sample_id'] == sample_id]
+        # TODO add manual dataframe of metadata from the meta directory
         
         # Read object metadata files for this sample
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
@@ -171,5 +172,7 @@ def run(ctx, project, force=False):
             sorted_df.to_csv(f, sep='\t', index=False, header=False)
         
         logger.info(f"Saved {sorted_df.shape[1]} fields for {sorted_df.shape[0]} objects to '{output_file}'")
-    
+        # TODO add images to a zip file
+
+
     log_command_success(logger, "Prepare EcoTaxa files")
