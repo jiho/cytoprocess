@@ -175,7 +175,7 @@ def run(ctx, project, force=False, max_cores=None):
     # Process each sample directory
     for sample_dir in sample_dirs:
         sample_id = sample_dir.name
-        output_file = meta_dir / f"{sample_id}_image_features.csv.gz"
+        output_file = meta_dir / f"{sample_id}_image_features.parquet"
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:
@@ -210,10 +210,10 @@ def run(ctx, project, force=False, max_cores=None):
                 logger.warning(f"No features extracted from sample '{sample_id}'")
                 continue
             
-            # Create DataFrame and save to CSV
+            # Create DataFrame and save to Parquet
             df = pd.DataFrame(rows)
             df = df.sort_values('object_id').reset_index(drop=True)
-            df.to_csv(output_file, index=False, compression='gzip')
+            df.to_parquet(output_file, index=False)
             
             logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")
             

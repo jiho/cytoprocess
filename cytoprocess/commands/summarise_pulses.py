@@ -59,10 +59,10 @@ def run(ctx, project, n_poly=10, force=False):
     # Ensure meta directory exists
     meta_dir = ensure_project_dir(project, "meta")
     
-    # Process each JSON file and write one CSV per sample
+    # Process each JSON file and write one Parquet per sample
     for json_file in json_files:
         sample_id = json_file.stem
-        output_file = meta_dir / f"{sample_id}_pulses.csv.gz"
+        output_file = meta_dir / f"{sample_id}_pulses.parquet"
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:
@@ -126,10 +126,10 @@ def run(ctx, project, n_poly=10, force=False):
                 logger.warning(f"No pulse data extracted from '{json_file.name}'")
                 continue
             
-            # Create DataFrame and save to CSV
+            # Create DataFrame and save to Parquet
             df = pd.DataFrame(rows)
             df = df.sort_values('object_id').reset_index(drop=True)
-            df.to_csv(output_file, index=False, compression='gzip')
+            df.to_parquet(output_file, index=False)
             
             logger.info(f"Saved {df.shape[0]} particles to '{output_file}'")
             
