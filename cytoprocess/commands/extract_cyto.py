@@ -200,7 +200,13 @@ def run(ctx, project, list_keys=False, force=False):
                 
                 # Process each particle
                 for particle in particles_data:
+                    # Only process particles with images
+                    if not particle.get('hasImage', False):
+                        continue
+
                     particle_idx = particle.get('particleId')
+
+                    # Get all its features
                     parameters = particle.get('parameters', [])
                     
                     if not parameters:

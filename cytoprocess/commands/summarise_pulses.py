@@ -87,8 +87,14 @@ def run(ctx, project, n_poly=10, force=False):
             
             # Process each particle
             logger.debug("Processing particles for pulse shape extraction")
-            for particle in particles_data:
+            for particle in particles_data:                
+                    # Only process particles with images
+                if not particle.get('hasImage', False):
+                    continue
+
                 particle_idx = particle.get('particleId')
+
+                # get the pulse shapes
                 pulse_shapes = particle.get('pulseShapes', [])
                 
                 if not pulse_shapes:
