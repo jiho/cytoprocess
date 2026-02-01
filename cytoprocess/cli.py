@@ -125,11 +125,13 @@ def compute_features(ctx, project, force, max_cores):
 
 
 @cli.command()
+@click.argument("project", type=click.Path(exists=True))
+@click.option("--force", is_flag=True, help="Force preparation even if output files already exist")
 @click.pass_context
-def prepare(ctx):
+def prepare(ctx, project, force):
     """Prepare .tsv and images for EcoTaxa."""
     from cytoprocess.commands import prepare
-    prepare.run(ctx)
+    prepare.run(ctx, project, force=force)
 
 
 @cli.command()
@@ -173,7 +175,7 @@ def _all(ctx, project, force):
         
         compute_features.run(ctx, project=project, force=force)
         
-        prepare.run(ctx)
+        prepare.run(ctx, project=project, force=force)
         
         upload.run(ctx)
         
