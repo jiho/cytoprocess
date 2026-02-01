@@ -215,7 +215,7 @@ def run(ctx, project, force=False, max_cores=None):
             df = df.sort_values('object_id').reset_index(drop=True)
             df.to_parquet(output_file, index=False)
             
-            logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")
+            logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} images to '{output_file}'")
             
         except Exception as e:
             logger.error(f"Error processing sample '{sample_id}': {e}")

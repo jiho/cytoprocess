@@ -152,7 +152,7 @@ def run(ctx, project, list_keys=False, force=False):
         # Normal operation: extract cytometric features based on config.yaml
         
         config_file = Path(project) / "config.yaml"
-        logger.info(f"Read cytometric feature list from '{config_file}'")
+        logger.info(f"Read selected cytometric features list from '{config_file}'")
         
         if not config_file.exists():
             logger.error(f"Configuration file not found: '{config_file}'")
@@ -242,7 +242,7 @@ def run(ctx, project, list_keys=False, force=False):
                 df = pd.DataFrame(rows)
                 df.to_parquet(output_file, index=False)
                 
-                logger.info(f"Saved {df.shape[0]} particles to '{output_file}'")
+                logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")
                 
             except Exception as e:
                 logger.error(f"Error processing '{json_file.name}': {e}")
