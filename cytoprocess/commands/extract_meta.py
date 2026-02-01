@@ -245,7 +245,7 @@ def run(ctx, project, list_keys=False):
         
         # Save to CSV in meta directory
         meta_dir = ensure_project_dir(project, "meta")
-        output_file = meta_dir / "sample_metadata.csv"
+        output_file = meta_dir / "sample_metadata_from_instrument.parquet"
         logger.info(f"Saving metadata to '{output_file}'")
         
         # Create DataFrame from newly extracted metadata
@@ -270,7 +270,7 @@ def run(ctx, project, list_keys=False):
         # Sort by sample_id, for consistency
         df = df.sort_values('sample_id').reset_index(drop=True)
 
-        df.to_csv(output_file, index=False)
+        df.to_parquet(output_file, index=False)
         logger.debug(f"Metadata shape: {df.shape[0]} rows × {df.shape[1]} columns")
 
     log_command_success(logger, "Extract metadata")
