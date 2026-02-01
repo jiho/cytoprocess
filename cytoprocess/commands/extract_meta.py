@@ -210,7 +210,8 @@ def run(ctx, project, list_keys=False):
                 row = {}
                 
                 # Process each section (sample, acq, process)
-                for section_name, section_keys in config.items():
+                for section_name in ['sample', 'acq', 'process']:
+                    section_keys = config.get(section_name)
                     if not isinstance(section_keys, dict):
                         continue
                     
