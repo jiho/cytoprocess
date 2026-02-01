@@ -1,10 +1,13 @@
 import logging
 from pathlib import Path
+from cytoprocess.utils import setup_file_logging, log_command_start, log_command_success
 
 
 def run(ctx, project):
-    logger = logging.getLogger("cytoprocess.cleanup")
-    logger.info(f"Cleaning up converted directory in project={project}")
+    logger = logging.getLogger("cleanup")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Cleaning up intermediate files", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Define converted directory
@@ -21,7 +24,7 @@ def run(ctx, project):
     json_files = list(converted_dir.glob("*.json"))
     
     if not json_files:
-        logger.info(f"No .json files found in {converted_dir}")
+        logger.info(f"No .json files found in '{converted_dir}'")
         return
     
     logger.info(f"Found {len(json_files)} .json files to delete")
@@ -29,11 +32,11 @@ def run(ctx, project):
     # Delete each .json file
     for json_file in json_files:
         try:
-            logger.debug(f"Deleting {json_file.name}")
+            logger.debug(f"Deleting '{json_file.name}'")
             json_file.unlink()
-            logger.info(f"Deleted {json_file.name}")
+            logger.info(f"Deleted '{json_file.name}'")
         except Exception as e:
-            logger.error(f"Failed to delete {json_file.name}: {e}")
+            logger.error(f"Failed to delete '{json_file.name}': {e}")
             raise
     
-    logger.info("Cleanup operation completed successfully")
+    log_command_success(logger, "Cleanup")

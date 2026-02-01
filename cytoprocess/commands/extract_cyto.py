@@ -2,7 +2,7 @@ import logging
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
 import ijson
 
 
@@ -89,8 +89,10 @@ def _get_parameter_value(parameters, path):
 
 
 def run(ctx, project, list_keys=False, force=False):
-    logger = logging.getLogger("cytoprocess.extract_cyto")
-    logger.info(f"Extracting cytometric features in project={project}")
+    logger = logging.getLogger("extract_cyto")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Extracting cytometric features", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get JSON files from converted directory
@@ -114,23 +116,23 @@ def run(ctx, project, list_keys=False, force=False):
                     first_particle = next(parser, None)
                     
                 if first_particle is None:
-                       logger.warning(f"No particles found in {json_file.name}")
+                       logger.warning(f"No particles found in '{json_file.name}'")
                        continue
                     
                 parameters = first_particle.get('parameters', [])
                 
                 if parameters is None or len(parameters) == 0:
-                    logger.warning(f"No parameters found in first particle of {json_file.name}")
+                    logger.warning(f"No parameters found in first particle of '{json_file.name}'")
                     continue
                                 
                 paths.extend(_get_parameters_structure(parameters))
                                 
             except Exception as e:
-                logger.error(f"Error reading {json_file.name}: {e}")
+                logger.error(f"Error reading '{json_file.name}': {e}")
                 raise
         
         if not paths:
-            logger.error("No parameter paths found in any JSON file")
+            logger.error("No parameter paths found in any .json file")
             return
         
         # Deduplicate and sort
@@ -144,17 +146,17 @@ def run(ctx, project, list_keys=False, force=False):
             for path in paths:
                 f.write(f"{path}\n")
         
-        logger.info(f"Available cytometric features written to {paths_file}. Use them in the object section of the config.yaml file to define cytometric feature extraction.")
+        logger.info(f"Available cytometric features written to '{paths_file}'. Use them in the object section of the config.yaml file to define cytometric feature extraction.")
     
     else:
         # Normal operation: extract cytometric features based on config.yaml
         
         config_file = Path(project) / "config.yaml"
-        logger.info(f"Read {config_file}")
+        logger.info(f"Read cytometric feature list from '{config_file}'")
         
         if not config_file.exists():
-            logger.error(f"Configuration file not found: {config_file}")
-            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+            logger.error(f"Configuration file not found: '{config_file}'")
+            raise FileNotFoundError(f"Configuration file not found: '{config_file}'")
         
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
@@ -162,7 +164,7 @@ def run(ctx, project, list_keys=False, force=False):
         # Get the 'object' section from config
         object_config = config.get('object')
         if not object_config or not isinstance(object_config, dict):
-            logger.error("No 'object' section found in config.yaml")
+            logger.error(f"No 'object' section found in '{config_file}'")
             raise ValueError("Configuration file must contain an 'object' section with cytometric feature mappings")
         
         logger.debug(f"Found {len(object_config)} mappings in 'object' section")
@@ -177,20 +179,20 @@ def run(ctx, project, list_keys=False, force=False):
             
             # Skip if output file exists and force is not set
             if output_file.exists() and not force:
-                logger.info(f"Skipping {json_file.name}: output file already exists (use --force to overwrite)")
+                logger.info(f"Skipping '{json_file.name}', output file already exists (use --force to overwrite)")
                 continue
             
             try:
-                logger.info(f"Extracting cytometric features from {json_file.name}")
+                logger.info(f"Extracting cytometric features from '{json_file.name}'")
                 
                 # Load the particles section of the json file
                 particles_data = get_json_section(json_file, 'particles')
                 
                 if particles_data is None or len(particles_data) == 0:
-                    logger.warning(f"No particles found in {json_file.name}")
+                    logger.warning(f"No particles found in '{json_file.name}'")
                     continue
                 
-                logger.debug(f"Found {len(particles_data)} particles in {json_file.name}")
+                logger.debug(f"Found {len(particles_data)} particles in '{json_file.name}'")
                 
                 # Prepare data structure: list of dicts, one per particle
                 rows = []
@@ -201,7 +203,7 @@ def run(ctx, project, list_keys=False, force=False):
                     parameters = particle.get('parameters', [])
                     
                     if not parameters:
-                        logger.debug(f"No parameters for particle {particle_idx} in {json_file.name}")
+                        logger.debug(f"No parameters for particle {particle_idx} in '{json_file.name}'")
                         continue
                     
                     # Create a row for this particle
@@ -219,22 +221,24 @@ def run(ctx, project, list_keys=False, force=False):
                         value = _get_parameter_value(parameters, json_path)
                         
                         if value is None:
-                            logger.debug(f"Path '{json_path}' not found in particle {particle_idx} of {json_file.name}")
+                            logger.debug(f"Path '{json_path}' not found in particle {particle_idx} of '{json_file.name}'")
                         
                         row[full_column_name] = value
                     
                     rows.append(row)
                 
                 if not rows:
-                    logger.warning(f"No particle data extracted from {json_file.name}")
+                    logger.warning(f"No particle data extracted from '{json_file.name}'")
                     continue
                 
                 # Create DataFrame and save to CSV
                 df = pd.DataFrame(rows)
                 df.to_csv(output_file, index=False, compression='gzip')
                 
-                logger.info(f"Saved {df.shape[0]} particles to {output_file}")
+                logger.info(f"Saved {df.shape[0]} particles to '{output_file}'")
                 
             except Exception as e:
-                logger.error(f"Error processing {json_file.name}: {e}")
+                logger.error(f"Error processing '{json_file.name}': {e}")
                 raise
+
+    log_command_success(logger, "Extract cytometric features")

@@ -2,15 +2,17 @@ import logging
 import base64
 import shutil
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
 
 
 def run(ctx, project, force=False):
-    logger = logging.getLogger("cytoprocess.extract_images")
-    logger.info(f"Extracting images from JSON files in project={project}")
+    logger = logging.getLogger("extract_images")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Extracting images", project)
     
     if force:
-        logger.debug("Force flag enabled - existing image directories will be removed and recreated")
+        logger.debug("Force flag enabled, existing image directories will be removed and recreated")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get JSON files from converted directory
@@ -24,7 +26,7 @@ def run(ctx, project, force=False):
     total_images = 0
     for json_file in json_files:
         try:
-            logger.debug(f"Extracting images from {json_file.name}")
+            logger.debug(f"Extracting images from '{json_file.name}'")
             
             # Define subdirectory for this sample's images
             sample_name = json_file.stem
@@ -33,10 +35,10 @@ def run(ctx, project, force=False):
             # Check if directory already exists
             if sample_images_dir.exists():
                 if force:
-                    logger.info(f"Removing existing directory: {sample_images_dir}")
+                    logger.info(f"Removing existing directory: '{sample_images_dir}'")
                     shutil.rmtree(sample_images_dir)
                 else:
-                    logger.warning(f"Directory already exists, skipping {json_file.name}. Use --force to overwrite.")
+                    logger.warning(f"Skipping '{json_file.name}', output directory already exists (use --force to overwrite).")
                     continue
             
             # Create the directory
@@ -46,7 +48,7 @@ def run(ctx, project, force=False):
             images = get_json_section(json_file, 'images')
             
             if images is None:
-                logger.warning(f"No images found in {json_file.name}")
+                logger.warning(f"No images found in '{json_file.name}'")
                 continue
             
             image_count = 0
@@ -56,18 +58,18 @@ def run(ctx, project, force=False):
                 base64_data = image.get('base64')
                 
                 if particle_id is None:
-                    logger.warning(f"Image item missing 'particleId' in {json_file.name}")
+                    logger.warning(f"Image item missing 'particleId' in '{json_file.name}'")
                     continue
                 
                 if base64_data is None:
-                    logger.warning(f"Image item {particle_id} missing 'base64' data in {json_file.name}")
+                    logger.warning(f"Image item {particle_id} missing 'base64' data in '{json_file.name}'")
                     continue
                 
                 # Decode base64 data
                 try:
                     image_data = base64.b64decode(base64_data)
                 except Exception as e:
-                    logger.error(f"Failed to decode base64 for particle {particle_id} in {json_file.name}: {e}")
+                    logger.error(f"Failed to decode base64 for particle {particle_id} in '{json_file.name}': {e}")
                     continue
                 
                 # Write to PNG file
@@ -77,13 +79,14 @@ def run(ctx, project, force=False):
                 
                 image_count += 1
                     
-            logger.info(f"Extracted {image_count} images from {json_file.name}")
+            logger.info(f"Extracted {image_count} images from '{json_file.name}' to '{sample_images_dir}'")
             total_images += image_count
                 
         except Exception as e:
-            logger.error(f"Error processing {json_file.name}: {e}")
+            logger.error(f"Error processing '{json_file.name}': {e}")
             raise
     
     logger.info(f"Total images extracted: {total_images}")
+    log_command_success(logger, "Extract images")
 
 # TODO add a way to post process the images to remove the background and crop them when they are full frames

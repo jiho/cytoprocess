@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from numpy.polynomial.polynomial import Polynomial
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
 
 
 def _normalise_pulse(values):
@@ -42,8 +42,10 @@ def _fit_polynomial(pulse, n_poly):
 
 
 def run(ctx, project, n_poly=10, force=False):
-    logger = logging.getLogger("cytoprocess.summarise_pulses")
-    logger.info(f"Summarising pulse shapes from JSON files in project={project}")
+    logger = logging.getLogger("summarise_pulses")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Summarising pulse shapes", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     logger.debug(f"Using {n_poly} polynomial coefficients")
     
@@ -64,20 +66,20 @@ def run(ctx, project, n_poly=10, force=False):
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:
-            logger.info(f"Skipping {json_file.name}: output file already exists (use --force to overwrite)")
+            logger.info(f"Skipping '{json_file.name}', output file already exists (use --force to overwrite)")
             continue
         
         try:
-            logger.debug(f"Extracting pulse shapes from {json_file.name}")
+            logger.debug(f"Extracting pulse shapes from '{json_file.name}'")
             
             # Load the particles section of the json file
             particles_data = get_json_section(json_file, 'particles')
             
             if particles_data is None or len(particles_data) == 0:
-                logger.warning(f"No particles found in {json_file.name}")
+                logger.warning(f"No particles found in '{json_file.name}'")
                 continue
             
-            logger.debug(f"Found {len(particles_data)} particles in {json_file.name}")
+            logger.debug(f"Found {len(particles_data)} particles in '{json_file.name}'")
             
             # Prepare data structure: list of dicts, one per particle
             rows = []
@@ -89,7 +91,7 @@ def run(ctx, project, n_poly=10, force=False):
                 pulse_shapes = particle.get('pulseShapes', [])
                 
                 if not pulse_shapes:
-                    logger.debug(f"No pulseShapes for particle {particle_idx} in {json_file.name}")
+                    logger.debug(f"No pulseShapes for particle {particle_idx} in '{json_file.name}'")
                     continue
                 
                 # Create a row for this particle
@@ -120,7 +122,7 @@ def run(ctx, project, n_poly=10, force=False):
                 rows.append(row)
             
             if not rows:
-                logger.warning(f"No pulse data extracted from {json_file.name}")
+                logger.warning(f"No pulse data extracted from '{json_file.name}'")
                 continue
             
             # Create DataFrame and save to CSV
@@ -128,8 +130,10 @@ def run(ctx, project, n_poly=10, force=False):
             df = df.sort_values('object_id').reset_index(drop=True)
             df.to_csv(output_file, index=False, compression='gzip')
             
-            logger.info(f"Saved {df.shape[0]} particles ({df.shape[1]} columns) to {output_file}")
+            logger.info(f"Saved {df.shape[0]} particles to '{output_file}'")
             
         except Exception as e:
-            logger.error(f"Error processing {json_file.name}: {e}")
+            logger.error(f"Error processing '{json_file.name}': {e}")
             raise
+
+    log_command_success(logger, "Summarise pulses")

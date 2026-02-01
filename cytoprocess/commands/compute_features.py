@@ -6,7 +6,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from skimage import io, feature, morphology, measure, filters
 from scipy import ndimage
-from cytoprocess.utils import ensure_project_dir
+from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
 
 
 def _segment_particle(image):
@@ -134,8 +134,10 @@ def _process_single_image(args):
 
 
 def run(ctx, project, force=False, max_cores=None):
-    logger = logging.getLogger("cytoprocess.compute_features")
-    logger.info(f"Computing image features in project={project}")
+    logger = logging.getLogger("compute_features")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Computing image features", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Determine number of cores to use
@@ -148,13 +150,13 @@ def run(ctx, project, force=False, max_cores=None):
     # Check images directory exists
     images_dir = Path(project) / "images"
     if not images_dir.exists():
-        logger.error(f"Images directory not found: {images_dir}. Run extract_images first.")
-        raise FileNotFoundError(f"Images directory not found: {images_dir}")
+        logger.error(f"Images directory not found: '{images_dir}'. Run extract_images first.")
+        raise FileNotFoundError(f"Images directory not found: '{images_dir}'")
     
     # Get list of sample directories
     sample_dirs = [d for d in images_dir.iterdir() if d.is_dir()]
     if not sample_dirs:
-        logger.warning(f"No sample directories found in {images_dir}. Run extract_images first.")
+        logger.warning(f"No sample directories found in '{images_dir}'. Run extract_images first.")
         return
    
     # Filter by sample if specified in context
@@ -177,7 +179,7 @@ def run(ctx, project, force=False, max_cores=None):
         
         # Skip if output file exists and force is not set
         if output_file.exists() and not force:
-            logger.info(f"Skipping '{sample_id}': output file already exists (use --force to overwrite)")
+            logger.info(f"Skipping '{sample_id}', output file already exists (use --force to overwrite)")
             continue
         
         try:
@@ -205,7 +207,7 @@ def run(ctx, project, force=False, max_cores=None):
             logger.debug(f"Successfully processed {len(rows)}/{len(image_files)} images")
             
             if not rows:
-                logger.warning(f"No features extracted from sample {sample_id}")
+                logger.warning(f"No features extracted from sample '{sample_id}'")
                 continue
             
             # Create DataFrame and save to CSV
@@ -213,8 +215,10 @@ def run(ctx, project, force=False, max_cores=None):
             df = df.sort_values('object_id').reset_index(drop=True)
             df.to_csv(output_file, index=False, compression='gzip')
             
-            logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to {output_file}")
+            logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")
             
         except Exception as e:
-            logger.error(f"Error processing sample {sample_id}: {e}")
+            logger.error(f"Error processing sample '{sample_id}': {e}")
             raise
+
+    log_command_success(logger, "Compute features")

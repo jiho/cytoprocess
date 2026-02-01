@@ -3,12 +3,14 @@ import os
 import shutil
 from pathlib import Path
 
-from cytoprocess.utils import ensure_project_dir
+from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
 
 
 def run(ctx, project):
-    logger = logging.getLogger("cytoprocess.create")
-    logger.info(f"Create project {project}")
+    logger = logging.getLogger("create")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Creating project", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Create the main directory if it doesn't exist
@@ -36,4 +38,4 @@ def run(ctx, project):
     else:
         logger.debug(f"Configuration file already exists at {dest_file}")
 
-    logger.info("Project creation completed successfully")
+    log_command_success(logger, "Create project")

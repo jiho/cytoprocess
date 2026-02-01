@@ -7,9 +7,10 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
+from cytoprocess.utils import log_command_start, log_command_success
 
 
-logger = logging.getLogger("cytoprocess.install")
+logger = logging.getLogger("install")
 
 
 def _get_or_create_bin_dir() -> Path:
@@ -143,7 +144,7 @@ def _check_or_get_cyz2json() -> str:
 
 
 def run(ctx):
-    logger.info("Fetching cyz2json")
+    log_command_start(logger, "Installing cyz2json")
     try:
         path = _check_or_get_cyz2json()
         result = subprocess.run([path, '--version'], check=True, capture_output=True, text=True)
@@ -151,3 +152,5 @@ def run(ctx):
     except Exception as e:
         logger.error(f"Failed to install cyz2json: {e}")
         raise
+
+    log_command_success(logger, "Install cyz2json")

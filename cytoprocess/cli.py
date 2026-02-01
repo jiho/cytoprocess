@@ -10,15 +10,6 @@ import click
 from pathlib import Path
 
 
-def _configure_logging(debug: bool):
-    level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(
-        level=level,
-        stream=sys.stdout,
-        format="[%(levelname)s] %(name)s: %(message)s",
-    )
-# TODO log to console and to a file in the logs/ directory of the project
-
 @click.group()
 @click.option("--debug", is_flag=True, default=False, help="Show debugging messages.")
 @click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file.")
@@ -33,9 +24,15 @@ def cli(ctx, debug, sample):
         sample = sample_path.stem
     ctx.obj["sample"] = sample
     
-    _configure_logging(debug)
-    logger = logging.getLogger("cytoprocess.cli")
-    logger.debug("CLI started (debug=%s, sample=%s)", debug, sample)
+    # Set up logging
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(
+        level=level,
+        stream=sys.stdout,
+        format="%(message)s",
+    )
+    logger = logging.getLogger("cytoprocess")
+    logger.debug(f"CLI started (debug={debug}, sample={sample})")
 
 
 @cli.command()
@@ -164,28 +161,20 @@ def _all(ctx, project, force):
     logger.info(f"Running all processing steps for project: {project}")
     
     try:
-        logger.info("Step 1/8: Converting .cyz files to .json")
         convert.run(ctx, project=project, force=force)
         
-        logger.info("Step 2/8: Extracting metadata")
         extract_meta.run(ctx, project=project, list_keys=False)
 
-        logger.info("Step 3/8: Extracting cytometric features")
         extract_cyto.run(ctx, project=project, list_keys=False, force=force)
         
-        logger.info("Step 4/8: Summarising pulse shapes")
         summarise_pulses.run(ctx, project=project, force=force)
 
-        logger.info("Step 5/8: Extracting images")
         extract_images.run(ctx, project=project, force=force)
         
-        logger.info("Step 6/8: Computing features from images")
         compute_features.run(ctx, project=project, force=force)
         
-        logger.info("Step 7/8: Preparing files for EcoTaxa")
         prepare.run(ctx)
         
-        logger.info("Step 8/8: Uploading to EcoTaxa")
         upload.run(ctx)
         
         logger.info("All processing steps completed successfully")

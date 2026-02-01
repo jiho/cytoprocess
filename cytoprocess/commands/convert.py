@@ -1,15 +1,17 @@
 import logging
 import subprocess
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir
+from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_file_logging, log_command_start
 
 
 def run(ctx, project, force=False):
-    logger = logging.getLogger("cytoprocess.convert")
-    logger.info(f"Converting .cyz files in project={project}")
+    logger = logging.getLogger("convert")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Converting .cyz files", project)
     
     if force:
-        logger.debug("Force flag enabled - existing JSON files will be overwritten")
+        logger.debug("Force flag enabled: existing .json files will be overwritten")
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get .cyz files from raw directory
@@ -28,7 +30,6 @@ def run(ctx, project, force=False):
         
     # Create processed directory if it doesn't exist
     converted_dir = ensure_project_dir(project, "converted")
-    logger.debug(f"Ensured converted directory exists: {converted_dir}")
 
     # Convert each .cyz file
     for cyz_file in cyz_files:
@@ -55,10 +56,10 @@ def run(ctx, project, force=False):
             )
             logger.debug(f"Successfully converted '{cyz_file.name}'")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to convert {cyz_file.name}: {e.stderr}")
+            logger.error(f"Failed to convert '{cyz_file.name}': {e.stderr}")
             raise
         except Exception as e:
-            logger.error(f"Error converting {cyz_file.name}: {e}")
+            logger.error(f"Error converting '{cyz_file.name}': {e}")
             raise
     
-    logger.info("Convert operation completed successfully")
+    log_command_success(logger, "Convert")

@@ -3,7 +3,7 @@ import ijson
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
 
 
 def _get_json_structure(json_data, prefix=""):
@@ -127,8 +127,10 @@ def _get_json_item(json_data, path):
 
 
 def run(ctx, project, list_keys=False):
-    logger = logging.getLogger("cytoprocess.extract_meta")
-    logger.info(f"Extracting metadata from JSON files in project={project}")
+    logger = logging.getLogger("extract_meta")
+    setup_file_logging(logger, project)
+
+    log_command_start(logger, "Extracting metadata", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
         
     # Get JSON files from converted directory
@@ -153,10 +155,10 @@ def run(ctx, project, list_keys=False):
                     keys.extend(_get_json_structure(instrument_data))
                 
             except ijson.JSONError as e:
-                logger.error(f"Failed to parse JSON file {json_file.name}: {e}")
+                logger.error(f"Failed to parse .jsong file '{json_file.name}': {e}")
                 raise
             except Exception as e:
-                logger.error(f"Error reading {json_file.name}: {e}")
+                logger.error(f"Error reading '{json_file.name}': {e}")
                 raise
 
             logger.info(f"Found {len(keys)} metadata items in '{json_file.name}'")
@@ -164,7 +166,7 @@ def run(ctx, project, list_keys=False):
         # If there are multiple json files, deduplicate keys
         if len(json_files) > 1:
             keys = list(set(keys))
-            logger.info(f"Found {len(keys)} unique metadata items across all JSON files")
+            logger.info(f"Found {len(keys)} unique metadata items across all .json files")
 
         # Make sure config directory exists
         meta_dir = ensure_project_dir(project, "meta")
@@ -183,10 +185,10 @@ def run(ctx, project, list_keys=False):
         config_file = Path(project) / "config.yaml"
         
         if not config_file.exists():
-            logger.error(f"Configuration file not found: {config_file}")
-            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+            logger.error(f"Configuration file not found: '{config_file}'")
+            raise FileNotFoundError(f"Configuration file not found: '{config_file}'")
         
-        logger.info(f"Reading metadata configuration from {config_file}")
+        logger.info(f"Read metadata fields list from '{config_file}'")
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
         
@@ -195,7 +197,7 @@ def run(ctx, project, list_keys=False):
         
         for json_file in json_files:
             try:
-                logger.debug(f"Extracting metadata from {json_file.name}")
+                logger.debug(f"Extracting metadata from '{json_file.name}'")
                 
                  # Load the instrument section of the json file
                 instrument_data = get_json_section(json_file, 'instrument')
@@ -232,19 +234,19 @@ def run(ctx, project, list_keys=False):
                         row[full_column_name] = value
                 
                 metadata_rows.append(row)
-                logger.info(f"Extracted {len(row)-1} metadata fields from {json_file.name}")
+                logger.info(f"Extracted {len(row)-1} metadata fields from '{json_file.name}'")
                 
             except ijson.JSONError as e:
-                logger.error(f"Failed to parse JSON file {json_file.name}: {e}")
+                logger.error(f"Failed to parse .json file '{json_file.name}': {e}")
                 raise
             except Exception as e:
-                logger.error(f"Error processing {json_file.name}: {e}")
+                logger.error(f"Error processing '{json_file.name}': {e}")
                 raise
         
         # Save to CSV in meta directory
         meta_dir = ensure_project_dir(project, "meta")
         output_file = meta_dir / "instrument_metadata.csv"
-        logger.info(f"Saving metadata to {output_file}")
+        logger.info(f"Saving metadata to '{output_file}'")
         
         # Create DataFrame from newly extracted metadata
         new_df = pd.DataFrame(metadata_rows)
@@ -270,4 +272,6 @@ def run(ctx, project, list_keys=False):
 
         df.to_csv(output_file, index=False)
         logger.debug(f"Metadata shape: {df.shape[0]} rows × {df.shape[1]} columns")
+
+    log_command_success(logger, "Extract metadata")
 
