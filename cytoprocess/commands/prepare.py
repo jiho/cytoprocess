@@ -206,7 +206,24 @@ def run(ctx, project, force=False, only_tsv=False):
         logger.error(f"Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
         return
 
-    # TODO detect extra samples everywhere
+    ## 4. Detect extra samples in work/ and warn the user ----
+
+    if not sample:
+        # List all samples available in work/
+        work_samples = set(instrument_meta_df['sample_id'].tolist())
+        for file in work_dir.glob("*_cytometric_features.parquet"):
+            sample_id = file.stem.replace("_cytometric_features", "")
+            work_samples.add(sample_id)
+        for file in work_dir.glob("*_pulses.parquet"):
+            sample_id = file.stem.replace("_pulses", "")
+            work_samples.add(sample_id)
+        for file in work_dir.glob("*_image_features.parquet"):
+            sample_id = file.stem.replace("_image_features", "")
+            work_samples.add(sample_id)
+        # detect the ones not in samples.csv
+        extra_samples = work_samples - set(samples)
+        if extra_samples:
+            logger.warning(f"NB: Detected {len(extra_samples)} sample(s) in 'work/' not listed in 'meta/samples.csv': {sorted(extra_samples)}; you should re-run `cytoprocess list {project}`.")
 
 
     ## 3. Prepare EcoTaxa .tsv/.zip files ----
