@@ -52,6 +52,15 @@ def install(ctx):
     install.run(ctx)
 
 
+@cli.command(name="list")
+@click.argument("project", type=click.Path(exists=True))
+@click.pass_context
+def list_samples(ctx, project):
+    """List samples and create/update samples.csv metadata file."""
+    from cytoprocess.commands import list as list_cmd
+    list_cmd.run(ctx, project=project)
+
+
 @cli.command()
 @click.argument("project")
 @click.option("--force", is_flag=True, default=False, help="Force conversion even if .json files already exist")
