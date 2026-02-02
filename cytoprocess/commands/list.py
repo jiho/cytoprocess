@@ -4,18 +4,33 @@ from pathlib import Path
 from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
 
 
-def run(ctx, project):
+DEFAULT_EXTRA_FIELDS = "object_lon,object_lat,object_date,object_time,object_depth_min,object_depth_max,object_lon_end,object_lat_end"
+
+
+def run(ctx, project, extra_fields=DEFAULT_EXTRA_FIELDS):
     """
     List all samples in a project and create/update the samples.csv metadata file.
     
     This creates a CSV file in the meta directory with the list of all samples
     (based on converted .json files), which can be used to add custom metadata.
+    
+    Args:
+        ctx: Click context
+        project: Path to the project directory
+        extra_fields: Comma-separated string of extra field names to add as columns
     """
     logger = logging.getLogger("list")
     setup_file_logging(logger, project)
 
     log_command_start(logger, "Listing samples", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
+
+    # Parse extra fields
+    if extra_fields:
+        extra_field_list = [f.strip() for f in extra_fields.split(',') if f.strip()]
+    else:
+        extra_field_list = []
+    logger.debug(f"Extra fields: {extra_field_list}")
 
     # Check that the 'converted' directory exists
     converted_dir = Path(project) / "converted"
@@ -33,9 +48,13 @@ def run(ctx, project):
         logger.warning(f"No .json files found in '{converted_dir}'")
         return
     
+
+    # Create 'samples' DataFrame
     samples = pd.DataFrame({
         'sample_id': [f.stem for f in converted_files]
     })
+    for field in extra_field_list:
+        samples[field] = None
     
     # Print sample IDs to console
     print(f"{len(samples)} samples found:")
@@ -43,18 +62,42 @@ def run(ctx, project):
         print(f"   {sample_id}")
 
     # Read existing metadata if it exists, otherwise create new
+    update_meta_file = True
     if meta_file.exists():
-        existing_df = pd.read_csv(meta_file)
-        # Only append rows that don't already exist
-        samples = samples[~samples['sample_id'].isin(existing_df['sample_id'])]
-        if not samples.empty:
-            combined_df = pd.concat([existing_df, samples], ignore_index=True)
-            combined_df.to_csv(meta_file, index=False)
-            logger.info(f"Added {len(samples)} new sample(s) to '{meta_file}'")
+        existing_samples = pd.read_csv(meta_file)
+        
+        # Detect which samples are new
+        new_samples = samples[~samples['sample_id'].isin(existing_samples['sample_id'])]
+        
+        # If there are no new samples, just ensure extra fields are present
+        if new_samples.empty:
+            missing_fields = [f for f in extra_field_list if f not in existing_samples.columns]
+            if not missing_fields:
+                logger.info(f"No new samples or fields to add to '{meta_file}'")
+                # In that case do not even rewrite the file
+                update_meta_file = False
+            else:
+                final_df = existing_samples
+                logger.info(f"Adding {len(missing_fields)} new field(s) to '{meta_file}'")
+                for field in missing_fields:
+                    logger.debug(f"Adding new column '{field}' to '{meta_file}'")
+                    final_df[field] = None
+                    
+        # If there are new samples, append them
         else:
-            logger.info(f"No new samples to add to '{meta_file}' (it already contains {len(existing_df)} sample(s))")
+            # Detect potentially missing fields in existing samples to inform the user about it
+            missing_fields = [f for f in extra_field_list if f not in existing_samples.columns]
+            logger.info(f"Adding {len(new_samples)} new sample(s)" + (f" and {len(missing_fields)} new field(s)" if missing_fields else "") + f" to '{meta_file}'")
+            logger.debug(f"Missing samples: {new_samples['sample_id'].tolist()}")
+            logger.debug(f"Missing fields: {missing_fields}")
+            final_df = pd.concat([existing_samples, new_samples], ignore_index=True)
+   
     else:
-        samples.to_csv(meta_file, index=False)
-        logger.info(f"Created file '{meta_file}' with {len(samples)} sample(s), you can now add custom metadata.")
-
+        final_df = samples
+        logger.info(f"Created file '{meta_file}' with {len(samples)} sample(s) and {samples.shape[1]-1} field(s), you can now add custom metadata.")
+    
+    # Still save if we added new columns
+    if update_meta_file:
+        final_df.to_csv(meta_file, index=False)
+ 
     log_command_success(logger, "List samples")

@@ -54,11 +54,12 @@ def install(ctx):
 
 @cli.command(name="list")
 @click.argument("project", type=click.Path(exists=True))
+@click.option("--extra-fields", default="object_lon,object_lat,object_date,object_time,object_depth_min,object_depth_max,object_lon_end,object_lat_end", help="Comma-separated list of extra fields to add as columns in samples.csv")
 @click.pass_context
-def list_samples(ctx, project):
+def list_samples(ctx, project, extra_fields):
     """List samples and create/update samples.csv metadata file."""
     from cytoprocess.commands import list as list_cmd
-    list_cmd.run(ctx, project=project)
+    list_cmd.run(ctx, project=project, extra_fields=extra_fields)
 
 
 @cli.command()

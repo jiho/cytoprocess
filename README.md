@@ -83,7 +83,7 @@ List available samples and create the `meta/samples.csv` file
 cytoprocess list path/to/my_project
 ```
 
-Manually enter the required metadata in the .csv file (you can add or remove columns as you see fit). Then performs all processing steps, for all samples, with default options with
+Manually enter the required metadata (such as lon, lat, etc.) in the .csv file. You can add or remove columns as you see fit, you can use the option `--extra-fields` to determine which to add. The conventions follow those of EcoTaxa. Then performs all processing steps, for all samples, with default options 
 
 ```bash
 cytoprocess all path/to/my_project
