@@ -67,22 +67,19 @@ def run(ctx, project, force=False):
     for sample_id in samples:
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
         if not cytometric_file.exists():
-            logger.warning(f"Missing cytometric features for sample '{sample_id}',\
-                           run `cytoprocess --sample {sample_id} extract_features {project}`")
             at_least_one_missing_file = True
+            logger.warning(f"Missing cytometric features, run `cytoprocess --sample {sample_id} extract_features {project}`")
         pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         if not pulses_file.exists():
-            logger.warning(f"Missing pulses summary for sample '{sample_id}',\
-                           run `cytoprocess --sample {sample_id} summarise_pulses {project}`")
             at_least_one_missing_file = True
+            logger.warning(f"Missing pulses summary, run `cytoprocess --sample {sample_id} summarise_pulses {project}`")
         image_features_file = work_dir / f"{sample_id}_image_features.parquet"
         if not image_features_file.exists():
-            logger.warning(f"Missing image features for sample '{sample_id}',\
-                           run `cytoprocess --sample {sample_id} compute_features {project}`")
             at_least_one_missing_file = True
         
     if at_least_one_missing_file:
         raise FileNotFoundError(f"Missing input files for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
+            logger.warning(f"Missing image features, run `cytoprocess --sample {sample_id} compute_features {project}`")
 
     # Ensure ecotaxa directory exists
     ecotaxa_dir = ensure_project_dir(project, "ecotaxa")
@@ -136,21 +133,17 @@ def run(ctx, project, force=False):
         # Limit object metadata columns to 500
         # NB: since object_id does not count as metadata, this means a maximum of 501 columns
         if len(object_cols) > 501:
-            logger.warning(f"Sample '{sample_id}' has {len(object_cols)-1}\
-                           object metadata columns, truncating to 500 (EcoTaxa limit)")
+            logger.warning(f"Sample '{sample_id}' has {len(object_cols)-1} object metadata columns, truncating to 500 (EcoTaxa limit)")
             object_cols = object_cols[:501]
         # Limit sample, process, and acq columns to 50 columns of metadata each
         if len(sample_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(sample_cols)-1}\
-                           sample metadata columns, truncating to 50 (EcoTaxa limit)")
+            logger.warning(f"Sample '{sample_id}' has {len(sample_cols)-1} sample metadata columns, truncating to 50 (EcoTaxa limit)")
             sample_cols = sample_cols[:51]
         if len(process_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(process_cols)-1}\
-                           process metadata columns, truncating to 50 (EcoTaxa limit)")
+            logger.warning(f"Sample '{sample_id}' has {len(process_cols)-1} process metadata columns, truncating to 50 (EcoTaxa limit)")
             process_cols = process_cols[:51]
         if len(acq_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(acq_cols)-1}\
-                           acq metadata columns, truncating to 50 (EcoTaxa limit)")
+            logger.warning(f"Sample '{sample_id}' has {len(acq_cols)-1} acq metadata columns, truncating to 50 (EcoTaxa limit)")
             acq_cols = acq_cols[:51]
 
         # Order columns for cleanness
