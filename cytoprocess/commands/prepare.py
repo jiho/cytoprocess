@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import zipfile
 from pathlib import Path
 from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
 
@@ -23,16 +24,19 @@ def _infer_ecotaxa_type(series):
         return '[t]'
 
 
-def run(ctx, project, force=False):
+def run(ctx, project, force=False, only_tsv=False):
     logger = logging.getLogger("prepare")
     setup_file_logging(logger, project)
     
     log_command_start(logger, "Preparing EcoTaxa files", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
+    if only_tsv:
+        logger.debug("Only creating TSV files (--only-tsv flag enabled)")
 
 
-    # Read samples list from meta directory
-    # it will serve as the reference for which samples exist
+    ## 1. Read reference list of samples ----
+
+    # = the one from the meta/samples.csv file
     samples_file = Path(project) / "meta" / "samples.csv"
     logger.debug(f"Checking '{samples_file}'")
     if not samples_file.exists():
@@ -54,7 +58,8 @@ def run(ctx, project, force=False):
         logger.info(f"Preparing EcoTaxa file for {len(samples)} sample(s)")
     
 
-    # Check that all required input files exist, for all requested samples
+    ## 2. Check that all required input files exist, for all requested samples ----
+
     logger.debug("Verifying required input files for all requested samples")
 
     # Check existence of file with metadata extracted from the .json
@@ -86,25 +91,37 @@ def run(ctx, project, force=False):
         if not image_features_file.exists():
             logger.warning(f"Missing image features, run `cytoprocess --sample {sample_id} compute_features {project}`")
             at_least_one_missing = True
+
+        images_dir = Path(project) / "images" / sample_id
+        if not images_dir.exists():
+            logger.warning(f"Images not found, run `cytoprocess --sample {sample_id} extract_images {project}`")
+            at_least_one_missing = True
     
     if at_least_one_missing:
         logger.error(f"Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
         return
 
+    # TODO detect extra samples everywhere
+
+
+    ## 3. Prepare EcoTaxa .tsv/.zip files ----
 
     # Ensure ecotaxa directory exists
     ecotaxa_dir = ensure_project_dir(project, "ecotaxa")
     
     # Process each sample
     for sample_id in samples:
-        output_file = ecotaxa_dir / f"ecotaxa_{sample_id}.tsv"
-        
+        tsv_file = ecotaxa_dir / f"ecotaxa_{sample_id}.tsv"
+        zip_file = ecotaxa_dir / f"ecotaxa_{sample_id}.zip"
+
         # Skip if output file exists and force is not set
-        if output_file.exists() and not force:
-            logger.info(f"Skipping '{sample_id}', ecotaxa_*.tsv file already exists (use --force to overwrite)")
+        if (tsv_file.exists() and only_tsv and not force) or (zip_file.exists() and not force):
+            logger.info(f"Skipping '{sample_id}', ecotaxa_*." + ("tsv" if only_tsv else "zip") + " file already exists (use --force to overwrite)")
             continue
         
-        logger.info(f"Preparing EcoTaxa file for sample '{sample_id}'")
+        logger.info(f"Preparing '{tsv_file}'")
+
+        ## 3.1 Merge all data for this sample ----
         
         # Get sample-level metadata
         sample_meta = samples_df[samples_df['sample_id'] == sample_id]
@@ -133,7 +150,10 @@ def run(ctx, project, force=False):
         # Add img_rank (0-based index for multiple images per object)
         # For now, assuming 1 image per object
         df['img_rank'] = 0
-                
+ 
+ 
+        ## 3.2 Prepare TSV file for this sample ----
+
         # Count columns per prefix and enforce EcoTaxa limits
         cols = df.columns.tolist()
         img_cols = [c for c in cols if c.startswith('img_')]
@@ -168,7 +188,7 @@ def run(ctx, project, force=False):
         
         # Create the EcoTaxa .tsv file
         # First write headers, then type row, then data        
-        with open(output_file, 'w') as f:
+        with open(tsv_file, 'w') as f:
             # Write header
             f.write('\t'.join(sorted_df.columns) + '\n')
             # Write type row
@@ -176,8 +196,33 @@ def run(ctx, project, force=False):
             # Write data rows
             sorted_df.to_csv(f, sep='\t', index=False, header=False)
         
-        logger.info(f"Saved {sorted_df.shape[1]} fields for {sorted_df.shape[0]} objects to '{output_file}'")
-        # TODO add images to a zip file
+        logger.debug(f"Saved {sorted_df.shape[1]} fields for {sorted_df.shape[0]} objects to '{tsv_file}'")
+        
+        if only_tsv:
+            logger.debug(f"Skipping zip creation, only TSV file requested (--only-tsv)")
+            continue
 
+
+        ## 3.3 Create zip file for this sample ----
+        logger.info(f"Creating '{zip_file}'")
+
+        images_dir = Path(project) / "images" / sample_id
+        with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # Add the TSV file
+            zf.write(tsv_file, tsv_file.name)
+            
+            # Add all images from the sample's images directory
+            image_files = list(images_dir.glob("*.png"))
+            logger.debug(f"Adding {len(image_files)} images to zip file")
+            
+            for image_file in image_files:
+                zf.write(image_file, image_file.name)
+        
+        logger.debug(f"Created zip file '{zip_file}' with {len(image_files)} images")
+
+
+        # Remove the TSV file after adding it to the zip
+        logger.debug(f"Removing temporary TSV file '{tsv_file}'")
+        tsv_file.unlink()
 
     log_command_success(logger, "Prepare EcoTaxa files")

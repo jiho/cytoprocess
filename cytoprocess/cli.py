@@ -137,11 +137,12 @@ def compute_features(ctx, project, force, max_cores):
 @cli.command()
 @click.argument("project", type=click.Path(exists=True))
 @click.option("--force", is_flag=True, help="Force preparation even if output files already exist")
+@click.option("--only-tsv", is_flag=True, help="Only create TSV files, skip zip file creation (useful to update metadata only)")
 @click.pass_context
-def prepare(ctx, project, force):
+def prepare(ctx, project, force, only_tsv):
     """Prepare .tsv and images for EcoTaxa."""
     from cytoprocess.commands import prepare
-    prepare.run(ctx, project, force=force)
+    prepare.run(ctx, project, force=force, only_tsv=only_tsv)
 
 
 @cli.command()
