@@ -30,56 +30,67 @@ def run(ctx, project, force=False):
     log_command_start(logger, "Preparing EcoTaxa files", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
 
-    # Check that the directory containing intermediate files exists
-    work_dir = Path(project) / "work"
-    logger.debug(f"Checking {work_dir}")
-    if not work_dir.exists():
-        message = f"Work directory not found: '{work_dir}',\
-            run previous extraction steps first."
-        logger.error(message)
-        raise FileNotFoundError(message)
 
-    # Read instrument metadata (sample-level)
-    # this will serve as the reference regarding which samples to process
-    samples_meta_file = work_dir / "sample_metadata_from_instrument.parquet"
-    logger.debug(f"Checking {samples_meta_file}")
-    if not samples_meta_file.exists():
-        message = f"Samples metadata file not found: '{samples_meta_file}',\
-            run `cytoprocess extract_meta {project}`."
+    # Read samples list from meta directory
+    # it will serve as the reference for which samples exist
+    samples_file = Path(project) / "meta" / "samples.csv"
+    logger.debug(f"Checking '{samples_file}'")
+    if not samples_file.exists():
+        message = f"Samples file not found: '{samples_file}',\
+            run `cytoprocess list {project}`."
         logger.error(message)
         raise FileNotFoundError(message)
     
-    logger.info(f"Reading reference for samples metadata from '{samples_meta_file}'")
-    metadata_df = pd.read_parquet(samples_meta_file)
-    
-    # Get list of samples to process
+    logger.info(f"Reading reference samples list from '{samples_file}'")
+    samples_df = pd.read_csv(samples_file)
+        
+    # Get list of samples to prepare (potentially filtered by --sample)
     sample = getattr(ctx, "obj", {}).get("sample")
     if sample:
         samples = [sample]
         logger.info(f"Preparing EcoTaxa file for sample: '{sample}'")
     else:
-        samples = metadata_df['sample_id'].unique().tolist()
+        samples = samples_df['sample_id'].unique().tolist()
         logger.info(f"Preparing EcoTaxa file for {len(samples)} sample(s)")
     
-    # Check that all required input files exist for all requested samples
+
+    # Check that all required input files exist, for all requested samples
     logger.debug("Verifying required input files for all requested samples")
-    at_least_one_missing_file = False
+
+    # Check existence of file with metadata extracted from the .json
+    work_dir = Path(project) / "work"
+    instrument_meta_file = work_dir / "sample_metadata_from_instrument.parquet"
+    if not instrument_meta_file.exists():
+        logger.error(f"Missing metadata from the instrument, run `cytoprocess extract_meta {project}`.")
+        return
+
+    # If it is present, read it to (1) check that all samples are there and (2) merge it later
+    at_least_one_missing = False
+    logger.debug(f"Reading instrument metadata from '{instrument_meta_file}'")
+    instrument_meta_df = pd.read_parquet(instrument_meta_file)
+    
     for sample_id in samples:
+        if sample_id not in instrument_meta_df['sample_id'].values:
+            logger.warning(f"Missing metadata from the instrument, run `cytoprocess --sample {sample_id} extract_meta {project}`")
+            at_least_one_missing = True
+
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
         if not cytometric_file.exists():
-            at_least_one_missing_file = True
             logger.warning(f"Missing cytometric features, run `cytoprocess --sample {sample_id} extract_features {project}`")
+            at_least_one_missing = True
         pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         if not pulses_file.exists():
-            at_least_one_missing_file = True
             logger.warning(f"Missing pulses summary, run `cytoprocess --sample {sample_id} summarise_pulses {project}`")
+            at_least_one_missing = True
         image_features_file = work_dir / f"{sample_id}_image_features.parquet"
         if not image_features_file.exists():
-            at_least_one_missing_file = True
-        
-    if at_least_one_missing_file:
-        raise FileNotFoundError(f"Missing input files for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
             logger.warning(f"Missing image features, run `cytoprocess --sample {sample_id} compute_features {project}`")
+            at_least_one_missing = True
+    
+    if at_least_one_missing:
+        logger.error(f"Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
+        return
+
 
     # Ensure ecotaxa directory exists
     ecotaxa_dir = ensure_project_dir(project, "ecotaxa")
@@ -95,9 +106,9 @@ def run(ctx, project, force=False):
         
         logger.info(f"Preparing EcoTaxa file for sample '{sample_id}'")
         
-        # Get sample metadata
-        samples_df = metadata_df[metadata_df['sample_id'] == sample_id]
-        # TODO add manual dataframe of metadata from the meta directory
+        # Get sample-level metadata
+        sample_meta = samples_df[samples_df['sample_id'] == sample_id]
+        instrument_meta = instrument_meta_df[instrument_meta_df['sample_id'] == sample_id]
         
         # Read object metadata files for this sample
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
@@ -110,7 +121,8 @@ def run(ctx, project, force=False):
         # Merge all data
         df = cytometric_df.merge(pulses_df, on=['sample_id', 'object_id'], how='left')
         df = df.merge(image_features_df, on=['sample_id', 'object_id'], how='left')
-        df = df.merge(samples_df, on=['sample_id'], how='left')
+        df = df.merge(sample_meta, on=['sample_id'], how='left')
+        df = df.merge(instrument_meta, on=['sample_id'], how='left')
 
         logger.debug(f"Found {len(df)} objects for sample '{sample_id}'")
 
