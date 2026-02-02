@@ -1,7 +1,9 @@
 import logging
 import pandas as pd
 import zipfile
+import numpy as np
 from pathlib import Path
+from skimage import io as skio
 from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
 
 
@@ -22,6 +24,110 @@ def _infer_ecotaxa_type(series):
         return '[f]'
     else:
         return '[t]'
+
+
+def _add_scale_bar(input_path: Path, output_path: Path, pixel_size: float):
+    """
+    Add a scale bar at the bottom of the image
+    
+    Args:
+        input_path: Path to the source PNG file
+        output_path: Path to write the processed PNG file
+        pixel_size: Size of one pixel in mm
+    """
+
+    # Define a custom minimal 'font' for scale bar text
+    f1 = np.asarray(
+        [[1,1,0,1],
+         [1,0,0,1],
+         [1,1,0,1],
+         [1,1,0,1],
+         [1,1,0,1],
+         [1,1,0,1],
+         [1,1,0,1],
+         [1,1,1,1],
+         [1,1,1,1]])
+    f0 = np.asarray(
+        [[1,1,0,0,1,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,1,0,0,1,1],
+         [1,1,1,1,1,1],
+         [1,1,1,1,1,1]])
+    fu = np.asarray(
+        [[1,1,1,1,1,1],
+         [1,1,1,1,1,1],
+         [1,1,1,1,1,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,0,1,1,0,1],
+         [1,0,0,0,1,1],
+         [1,0,1,1,1,1],
+         [1,0,1,1,1,1]])
+    fm = np.asarray(
+        [[1,1,1,1,1,1],
+         [1,1,1,1,1,1],
+         [1,1,1,1,1,1],
+         [0,0,1,0,1,1],
+         [0,1,0,1,0,1],
+         [0,1,0,1,0,1],
+         [0,1,0,1,0,1],
+         [1,1,1,1,1,1],
+         [1,1,1,1,1,1]])
+    
+    # Define scale bar sizes and corresponding text
+    breaks_um = np.array([1, 10, 100])
+    t1um  = np.concatenate((f1, fu, fm), axis=1)
+    t10um = np.concatenate((f1, f0, fu, fm), axis=1)
+    t100um = np.concatenate((f1, f0, f0, fu, fm), axis=1)
+    breaks_text = [t1um, t10um, t100um]
+    
+    # Read the grayscale image
+    img = skio.imread(input_path, as_gray=True)
+    img_width_px = img.shape[1]
+    
+    # Define how large the scale bar is for each physical size
+    breaks_px = np.round(breaks_um / pixel_size)
+
+    # Start the scale bar at these many pixels from the bottom left corner
+    pad = 5
+
+    # Find the most appropriate scale bar size given the width of the object
+    break_idx = int(np.interp(img_width_px-pad, breaks_px, range(len(breaks_px))))
+    
+    # Pick the actual size and text we need for this size
+    bar_width_px = int(breaks_px[break_idx])
+    bar_text = breaks_text[break_idx]
+    text_height_px,text_width_px = bar_text.shape
+
+    # Define the width and height of the scale bar area
+    w = max(img_width_px, bar_width_px+pad, text_width_px+pad)
+    h = 31
+    # NB: 31px matches ZooProcess
+    
+    # Define the scale bar area background colour as the median of the top row of the image
+    backgd_clr = np.median(img[0,:]) 
+
+    # Pad the input image on the right if it is not wide enough
+    if w > img_width_px:
+        padding_width = w - img_width_px
+        img = np.pad(img, ((0, 0), (0, padding_width)), constant_values=backgd_clr)
+    
+    # Draw a blank scale bar area
+    scale = np.full((h, w), backgd_clr, dtype=img.dtype)
+    # Add the scale bar (black)
+    scale[h-pad-2:h-pad, pad:(bar_width_px+pad)] = 0
+    # Add the text (convert [0,1] to [0,backgd_clr])
+    scale[h-pad-4-text_height_px:h-pad-4, pad:(text_width_px+pad)] = (bar_text * backgd_clr).astype(img.dtype)
+    
+    # Combine with the image
+    img = np.concatenate((img, scale), axis=0)
+        
+    # Write the processed image
+    skio.imsave(output_path, img)
 
 
 def run(ctx, project, force=False, only_tsv=False):
@@ -135,6 +241,11 @@ def run(ctx, project, force=False, only_tsv=False):
         pulses_df = pd.read_parquet(pulses_file)
         image_features_df = pd.read_parquet(image_features_file)
 
+        # Extract pixel size from our custom column and remove it
+        # (the user will have it only if he/she explicitly extracted it)
+        pixel_size = np.float32(instrument_meta.iloc[0]['__pixel_size__'])
+        instrument_meta = instrument_meta.drop(columns=['__pixel_size__'])
+
         # Merge all data
         df = cytometric_df.merge(pulses_df, on=['sample_id', 'object_id'], how='left')
         df = df.merge(image_features_df, on=['sample_id', 'object_id'], how='left')
@@ -207,16 +318,24 @@ def run(ctx, project, force=False, only_tsv=False):
         logger.info(f"Creating '{zip_file}'")
 
         images_dir = Path(project) / "images" / sample_id
+        image_files = list(images_dir.glob("*.png"))
+        processed_images = []
+        
         with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
             # Add the TSV file
             zf.write(tsv_file, tsv_file.name)
             
-            # Add all images from the sample's images directory
-            image_files = list(images_dir.glob("*.png"))
-            logger.debug(f"Adding {len(image_files)} images to zip file")
+            # Process and add all images from the sample's images directory
+            logger.debug(f"Processing and adding {len(image_files)} images to zip file")
             
             for image_file in image_files:
-                zf.write(image_file, image_file.name)
+                # Process image: add scale bar at bottom
+                processed_path = ecotaxa_dir / image_file.name
+                _add_scale_bar(image_file, processed_path, pixel_size)
+                processed_images.append(processed_path)
+                
+                # Add to zip
+                zf.write(processed_path, processed_path.name)
         
         logger.debug(f"Created zip file '{zip_file}' with {len(image_files)} images")
 
@@ -224,5 +343,10 @@ def run(ctx, project, force=False, only_tsv=False):
         # Remove the TSV file after adding it to the zip
         logger.debug(f"Removing temporary TSV file '{tsv_file}'")
         tsv_file.unlink()
+        
+        # Remove processed images after adding them to the zip
+        logger.debug(f"Removing {len(processed_images)} temporary processed images")
+        for processed_path in processed_images:
+            processed_path.unlink()
 
     log_command_success(logger, "Prepare EcoTaxa files")

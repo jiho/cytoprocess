@@ -205,7 +205,7 @@ def run(ctx, project, list_keys=False):
                 # If it is found, extract all the metadata keys it contains
                 if instrument_data is None:
                     continue
-                
+
                 # Create a row for this file
                 row = {}
                 
@@ -233,9 +233,14 @@ def run(ctx, project, list_keys=False):
                             logger.debug(f"Key '{json_path}' not found in {json_file.name}")
                         
                         row[full_column_name] = value
+
+                    # Force the inclusion of pixel size because we need it later
+                    # (to draw the scale bar on images)
+                    row["__pixel_size__"] = _get_json_item(instrument_data, 'measurementSettings.CytoSettings.CytoSettings.iif.ImageScaleMuPerPixelP')
                 
                 metadata_rows.append(row)
-                logger.info(f"Extracted {len(row)-1} metadata fields from '{json_file.name}'")
+                logger.info(f"Extracted {len(row)-2} metadata fields from '{json_file.name}'")
+                # NB: -2 to exclude the sample_id and __pixel_size__ fields
                 
             except ijson.JSONError as e:
                 logger.error(f"Failed to parse .json file '{json_file.name}': {e}")
