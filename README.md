@@ -95,7 +95,7 @@ If you want to know the details, or proceed manually, the steps behind `all` are
 # convert .cyz files into .json and create a placeholder its metadata
 cytoprocess convert path/to/project
 
-# extract sample level metadata from each .json file
+# extract sample/acq/process level metadata from each .json file
 cytoprocess extract_meta path/to/project
 # extract cytometric features for each imaged particle
 cytoprocess extract_cyto path/to/project
