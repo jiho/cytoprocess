@@ -224,7 +224,7 @@ def run(ctx, project, force=False, only_tsv=False):
             logger.info(f"Skipping '{sample_id}', ecotaxa_*." + ("tsv" if only_tsv else "zip") + " file already exists (use --force to overwrite)")
             continue
         
-        logger.info(f"Preparing '{tsv_file}'")
+        logger.info(f"Collating '{tsv_file}'")
 
         ## 3.1 Merge all data for this sample ----
         
@@ -314,7 +314,7 @@ def run(ctx, project, force=False, only_tsv=False):
 
 
         ## 3.3 Create zip file for this sample ----
-        logger.info(f"Creating '{zip_file}'")
+        logger.info(f"Assembling '{zip_file}'")
 
         images_dir = Path(project) / "images" / sample_id
         image_files = list(images_dir.glob("*.png"))
