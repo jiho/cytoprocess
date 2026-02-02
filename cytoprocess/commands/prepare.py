@@ -146,8 +146,7 @@ def run(ctx, project, force=False, only_tsv=False):
     samples_file = Path(project) / "meta" / "samples.csv"
     logger.debug(f"Checking '{samples_file}'")
     if not samples_file.exists():
-        message = f"Samples file not found: '{samples_file}',\
-            run `cytoprocess list {project}`."
+        message = f"Samples file not found: '{samples_file}', run `cytoprocess list {project}`."
         logger.error(message)
         raise FileNotFoundError(message)
     
