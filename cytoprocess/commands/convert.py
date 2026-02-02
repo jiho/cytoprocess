@@ -2,6 +2,7 @@ import logging
 import subprocess
 from pathlib import Path
 from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_file_logging, log_command_start
+from cytoprocess.commands import install
 
 
 def run(ctx, project, force=False):
@@ -21,7 +22,6 @@ def run(ctx, project, force=False):
     
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")
-    from cytoprocess.commands import install
     try:
         cyz2json_path = install._check_or_get_cyz2json()
     except Exception as e:
