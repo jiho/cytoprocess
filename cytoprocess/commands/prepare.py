@@ -182,25 +182,25 @@ def run(ctx, project, force=False, only_tsv=False):
     
     for sample_id in samples:
         if sample_id not in instrument_meta_df['sample_id'].values:
-            logger.warning(f"Missing metadata from the instrument, run `cytoprocess --sample {sample_id} extract_meta {project}`")
+            logger.warning(f"Missing metadata from the instrument, run `cytoprocess --sample '{sample_id}' extract_meta {project}`")
             at_least_one_missing = True
 
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
         if not cytometric_file.exists():
-            logger.warning(f"Missing cytometric features, run `cytoprocess --sample {sample_id} extract_features {project}`")
+            logger.warning(f"Missing cytometric features, run `cytoprocess --sample '{sample_id}' extract_features {project}`")
             at_least_one_missing = True
         pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         if not pulses_file.exists():
-            logger.warning(f"Missing pulses summary, run `cytoprocess --sample {sample_id} summarise_pulses {project}`")
+            logger.warning(f"Missing pulses summary, run `cytoprocess --sample '{sample_id}' summarise_pulses {project}`")
             at_least_one_missing = True
         image_features_file = work_dir / f"{sample_id}_image_features.parquet"
         if not image_features_file.exists():
-            logger.warning(f"Missing image features, run `cytoprocess --sample {sample_id} compute_features {project}`")
+            logger.warning(f"Missing image features, run `cytoprocess --sample '{sample_id}' compute_features {project}`")
             at_least_one_missing = True
 
         images_dir = Path(project) / "images" / sample_id
         if not images_dir.exists():
-            logger.warning(f"Images not found, run `cytoprocess --sample {sample_id} extract_images {project}`")
+            logger.warning(f"Images not found, run `cytoprocess --sample '{sample_id}' extract_images {project}`")
             at_least_one_missing = True
     
     if at_least_one_missing:
