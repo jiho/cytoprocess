@@ -188,19 +188,22 @@ def run(ctx, project, force=False, only_tsv=False):
         if not cytometric_file.exists():
             logger.warning(f"Missing cytometric features, run `cytoprocess --sample '{sample_id}' extract_features {project}`")
             at_least_one_missing = True
+
         pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         if not pulses_file.exists():
             logger.warning(f"Missing pulses summary, run `cytoprocess --sample '{sample_id}' summarise_pulses {project}`")
-            at_least_one_missing = True
-        image_features_file = work_dir / f"{sample_id}_image_features.parquet"
-        if not image_features_file.exists():
-            logger.warning(f"Missing image features, run `cytoprocess --sample '{sample_id}' compute_features {project}`")
             at_least_one_missing = True
 
         images_dir = Path(project) / "images" / sample_id
         if not images_dir.exists():
             logger.warning(f"Images not found, run `cytoprocess --sample '{sample_id}' extract_images {project}`")
             at_least_one_missing = True
+        
+        image_features_file = work_dir / f"{sample_id}_image_features.parquet"
+        if not image_features_file.exists():
+            logger.warning(f"Missing image features, run `cytoprocess --sample '{sample_id}' compute_features {project}`")
+            at_least_one_missing = True
+
     
     if at_least_one_missing:
         logger.error(f"Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
@@ -251,11 +254,11 @@ def run(ctx, project, force=False, only_tsv=False):
         
         # Read object metadata files for this sample
         cytometric_file = work_dir / f"{sample_id}_cytometric_features.parquet"
-        pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         image_features_file = work_dir / f"{sample_id}_image_features.parquet"
+        pulses_file = work_dir / f"{sample_id}_pulses.parquet"
         cytometric_df = pd.read_parquet(cytometric_file)
-        pulses_df = pd.read_parquet(pulses_file)
         image_features_df = pd.read_parquet(image_features_file)
+        pulses_df = pd.read_parquet(pulses_file)
 
         # Extract pixel size from our custom column and remove it
         # (the user will have it only if he/she explicitly extracted it)
@@ -263,8 +266,8 @@ def run(ctx, project, force=False, only_tsv=False):
         instrument_meta = instrument_meta.drop(columns=['__pixel_size__'])
 
         # Merge all data
-        df = cytometric_df.merge(pulses_df, on=['sample_id', 'object_id'], how='left')
-        df = df.merge(image_features_df, on=['sample_id', 'object_id'], how='left')
+        df = cytometric_df.merge(image_features_df, on=['sample_id', 'object_id'], how='left')
+        df = df.merge(pulses_df, on=['sample_id', 'object_id'], how='left')
         df = df.merge(sample_meta, on=['sample_id'], how='left')
         df = df.merge(instrument_meta, on=['sample_id'], how='left')
 
