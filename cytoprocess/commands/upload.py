@@ -92,6 +92,36 @@ def _get_user_info(token: str) -> dict | None:
         return None
 
 
+def _get_project_info(token: str, project_id: int) -> dict | None:
+    """
+    Get project information from EcoTaxa.
+    
+    Args:
+        token: JWT authentication token
+        project_id: EcoTaxa project ID
+        
+    Returns:
+        Project information dict or None if request fails.
+        Contains fields like 'title', 'projid', 'status', etc.
+    """
+    try:
+        response = requests.get(
+            f"{ECOTAXA_API_URL}/projects/{project_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=30,
+        )
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 403:
+            logger.error("Access denied to project %d", project_id)
+        elif response.status_code == 404:
+            logger.error("Project %d not found", project_id)
+        return None
+    except requests.RequestException as e:
+        logger.error("Failed to get project info: %s", e)
+        return None
+
+
 def authenticate(username: str | None = None, password: str | None = None) -> str | None:
     """
     Authenticate with EcoTaxa API.
@@ -356,9 +386,20 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
         return
     
     logger.info(f"Found {len(zip_files)} zip file(s) to upload")
-    logger.info(f"Uploading to EcoTaxa project {project_id}")
-    # TODO check that the project exists and that the user has write access to it
-    # TODO print the project's name
+    
+    # Get and display project name
+    project_info = _get_project_info(token, project_id)
+    if project_info:
+        project_name = project_info.get("title", "Unknown")
+        logger.info(f"Project name: {project_name}")
+    else:
+        project_name = "Unknown"
+        logger.warning("Could not retrieve project information")
+    logger.info(f"Uploading to EcoTaxa project '{project_name}' [{project_id}]")
+    
+    # Get existing samples in the project
+    existing_samples = _get_project_samples(token, project_id)
+    logger.info(f"Found {len(existing_samples)} existing sample(s) in project")
     
     # Process each zip file: upload, import, and monitor until complete
     for i, zip_path in enumerate(zip_files, 1):
