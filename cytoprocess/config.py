@@ -1,1 +1,0 @@
-# TODO handle configuration changes (compared to the default in the package)
