@@ -122,6 +122,36 @@ def _get_project_info(token: str, project_id: int) -> dict | None:
         return None
 
 
+def _get_project_samples(token: str, project_id: int) -> set[str]:
+    """
+    Get the set of sample IDs that exist in an EcoTaxa project.
+    
+    Args:
+        token: JWT authentication token
+        project_id: EcoTaxa project ID
+        
+    Returns:
+        Set of sample IDs (orig_id) in the project.
+    """
+    try:
+        response = requests.get(
+            f"{ECOTAXA_API_URL}/samples/search",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"project_ids": str(project_id), "id_pattern": "*"},
+            timeout=60,
+        )
+        if response.status_code == 200:
+            samples = response.json()
+            # Extract sample orig_id from the response
+            return {s.get("orig_id", "") for s in samples if s.get("orig_id")}
+        else:
+            logger.warning("Failed to get samples: %s", response.text)
+            return set()
+    except requests.RequestException as e:
+        logger.warning("Failed to get project samples: %s", e)
+        return set()
+
+
 def authenticate(username: str | None = None, password: str | None = None) -> str | None:
     """
     Authenticate with EcoTaxa API.
@@ -403,6 +433,14 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
     
     # Process each zip file: upload, import, and monitor until complete
     for i, zip_path in enumerate(zip_files, 1):
+        # Extract sample ID from filename (ecotaxa_<sample_id>.zip)
+        sample_id = zip_path.stem.replace("ecotaxa_", "")
+        
+        # Skip if sample already exists
+        if sample_id in existing_samples:
+            print(f"\n[{i}/{len(zip_files)}] Skipping: {zip_path.name} (sample '{sample_id}' already exists)")
+            continue
+
         print(f"\n[{i}/{len(zip_files)}] Processing: {zip_path.name}")
         
         # Upload
