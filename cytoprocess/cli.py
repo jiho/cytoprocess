@@ -146,11 +146,14 @@ def prepare(ctx, project, force, only_tsv):
 
 
 @cli.command()
+@click.argument("project", type=click.Path(exists=True))
+@click.option("--username", "-u", help="EcoTaxa email address")
+@click.option("--password", "-p", help="EcoTaxa password")
 @click.pass_context
-def upload(ctx):
-    """Upload files to EcoTaxa."""
+def upload(ctx, project, username, password):
+    """Upload files to EcoTaxa. """
     from cytoprocess.commands import upload
-    upload.run(ctx)
+    upload.run(ctx, project, username=username, password=password)
 
 
 @cli.command(name="all")

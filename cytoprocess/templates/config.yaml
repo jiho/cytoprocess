@@ -1,6 +1,11 @@
 # CytoProcess configuration file
 # ------------------------------
 
+# Numeric ID of the EcoTaxa project to which data will be uploaded.
+# You can find this ID in the URL when viewing your project on EcoTaxa.
+ecotaxa:
+  project_id: null
+
 
 # This part maps instrument metadata items from the .json files to
 # column names for import into EcoTaxa.
