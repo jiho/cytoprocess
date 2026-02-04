@@ -178,7 +178,7 @@ def all(ctx, project, force):
         
         prepare.run(ctx, project=project, force=force)
         
-        upload.run(ctx)
+        upload.run(ctx, project=project)
         
         logger.info("All processing steps completed successfully")
         
