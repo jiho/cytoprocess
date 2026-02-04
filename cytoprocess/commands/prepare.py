@@ -270,6 +270,11 @@ def run(ctx, project, force=False, only_tsv=False):
         # the metadata extracted from the JSON is the same for the whole sample anyway
         df['process_id'] = df['acq_id']
 
+        # Reorder columns to put all *_id columns first
+        id_cols = [c for c in df.columns if c.endswith('_id')]
+        other_cols = [c for c in df.columns if not c.endswith('_id')]
+        df = df[id_cols + other_cols]
+
         logger.debug(f"Found {len(df)} objects for sample '{sample_id}'")
 
         # Add image filename (img_file_name) based on particle_id
