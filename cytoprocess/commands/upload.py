@@ -19,7 +19,7 @@ def _get_stored_token():
     try:
         return keyring.get_password(KEYRING_SERVICE, "token")
     except Exception as e:
-        logger.debug("Could not retrieve token from keyring: %s", e)
+        logger.debug(f"Could not retrieve token from keyring: {e}")
         return None
 
 
@@ -29,7 +29,7 @@ def _store_token(token: str):
         keyring.set_password(KEYRING_SERVICE, "token", token)
         return True
     except Exception as e:
-        logger.warning("Could not store token in keyring: %s", e)
+        logger.warning(f"Could not store token in keyring: {e}")
         return False
 
 
@@ -70,10 +70,10 @@ def _login(username: str, password: str) -> str | None:
             # The API returns the token as a plain string (JSON string)
             return response.json()
         else:
-            logger.error("Login failed: %s", response.text)
+            logger.error(f"Login failed: {response.text}")
             return None
     except requests.RequestException as e:
-        logger.error("Login request failed: %s", e)
+        logger.error(f"Login request failed: {e}")
         return None
 
 
@@ -113,12 +113,12 @@ def _get_project_info(token: str, project_id: int) -> dict | None:
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 403:
-            logger.error("Access denied to project %d", project_id)
+            logger.error(f"Access denied to project {project_id}")
         elif response.status_code == 404:
-            logger.error("Project %d not found", project_id)
+            logger.error(f"Project {project_id} not found")
         return None
     except requests.RequestException as e:
-        logger.error("Failed to get project info: %s", e)
+        logger.error(f"Failed to get project info: {e}")
         return None
 
 
@@ -145,10 +145,10 @@ def _get_project_samples(token: str, project_id: int) -> set[str]:
             # Extract sample orig_id from the response
             return {s.get("orig_id", "") for s in samples if s.get("orig_id")}
         else:
-            logger.warning("Failed to get samples: %s", response.text)
+            logger.warning(f"Failed to get samples: {response.text}")
             return set()
     except requests.RequestException as e:
-        logger.warning("Failed to get project samples: %s", e)
+        logger.warning(f"Failed to get project samples: {e}")
         return set()
 
 
@@ -171,9 +171,7 @@ def authenticate(username: str | None = None, password: str | None = None) -> st
     if token and _validate_token(token):
         user_info = _get_user_info(token)
         if user_info:
-            logger.info("Authenticated as: %s (%s)", 
-                       user_info.get("name", "Unknown"),
-                       user_info.get("email", "Unknown"))
+            logger.info(f"Authenticated as: {user_info.get('name', 'Unknown')} ({user_info.get('email', 'Unknown')})")
         return token
     elif token:
         logger.info("Stored token is invalid, need to re-authenticate")
