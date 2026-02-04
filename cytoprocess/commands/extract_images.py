@@ -23,6 +23,7 @@ def run(ctx, project, force=False):
     
     # Process each JSON file
     total_images = 0
+    images = None  # Cache images section to avoid multiple reads
     for json_file in json_files:
         try:
             logger.debug(f"Extracting images from '{json_file.name}'")
@@ -44,9 +45,10 @@ def run(ctx, project, force=False):
             sample_images_dir = ensure_project_dir(project, f"images/{sample_name}")
             
             # Load the images section from the JSON file
-            images = get_json_section(json_file, 'images', logger)
-            # TODO move this out of the loop (this is long) but also list samples which already have images and only read it if there are samples to process
-            
+            # (only once)
+            if images is None:
+                images = get_json_section(json_file, 'images', logger)
+
             if images is None:
                 logger.warning(f"No images found in '{json_file.name}'")
                 continue
