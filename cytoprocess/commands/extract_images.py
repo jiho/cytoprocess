@@ -45,6 +45,7 @@ def run(ctx, project, force=False):
             
             # Load the images section from the JSON file
             images = get_json_section(json_file, 'images', logger)
+            # TODO move this out of the loop (this is long) but also list samples which already have images and only read it if there are samples to process
             
             if images is None:
                 logger.warning(f"No images found in '{json_file.name}'")
