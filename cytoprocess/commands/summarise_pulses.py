@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from numpy.polynomial.polynomial import Polynomial
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success, raiseCytoError
 
 
 def _normalise_pulse(values):
@@ -138,7 +138,6 @@ def run(ctx, project, n_poly=10, force=False):
             logger.info(f"Saved {df.shape[0]} particles to '{output_file}'")
             
         except Exception as e:
-            logger.error(f"Error processing '{json_file.name}': {e}")
-            raise
+            raiseCytoError(f"Error processing '{json_file.name}': {e}", logger)
 
     log_command_success(logger, "Summarise pulses")

@@ -6,7 +6,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from skimage import io, feature, morphology, measure, filters
 from scipy import ndimage
-from cytoprocess.utils import ensure_project_dir, log_command_start, log_command_success, setup_logging
+from cytoprocess.utils import ensure_project_dir, log_command_start, log_command_success, setup_logging, raiseCytoError
 
 
 def _segment_particle(image):
@@ -149,22 +149,19 @@ def run(ctx, project, force=False, max_cores=None):
     # Check images directory exists
     images_dir = Path(project) / "images"
     if not images_dir.exists():
-        logger.error(f"Images directory not found: '{images_dir}'. Run extract_images first.")
-        raise FileNotFoundError(f"Images directory not found: '{images_dir}'")
+        raiseCytoError(f"Images directory not found: '{images_dir}'. Run extract_images first.", logger)
     
     # Get list of sample directories
     sample_dirs = [d for d in images_dir.iterdir() if d.is_dir()]
     if not sample_dirs:
-        logger.warning(f"No sample directories found in '{images_dir}'. Run extract_images first.")
-        return
+        raiseCytoError(f"No sample directories found in '{images_dir}', run 'cytoprocess extract_images {project}' first.", logger)
    
     # Filter by sample if specified in context
     sample = getattr(ctx, "obj", {}).get("sample")
     if sample:
         sample_dirs = [d for d in sample_dirs if d.name == sample]
         if not sample_dirs:
-            logger.warning(f"No image directory found for sample '{sample}'")
-            return
+            raiseCytoError(f"No image directory found for sample '{sample}', run 'cytoprocess --sample '{sample}' extract_images {project}' first.", logger)
     
     logger.info(f"Processing {len(sample_dirs)} sample(s)")
     
@@ -188,7 +185,7 @@ def run(ctx, project, force=False, max_cores=None):
             image_files = sorted(sample_dir.glob("*.png"))
             
             if not image_files:
-                logger.warning(f"No PNG images found in '{sample_dir}'. Run extract_images first.")
+                logger.warning(f"No PNG images found in '{sample_dir}', run 'cytoprocess --sample '{sample_id}' extract_images {project}' first.", logger)
                 continue
             
             logger.info(f"Processing {len(image_files)} images for sample '{sample_id}'")
@@ -206,7 +203,7 @@ def run(ctx, project, force=False, max_cores=None):
             logger.debug(f"Successfully processed {len(rows)}/{len(image_files)} images")
             
             if not rows:
-                logger.warning(f"No features extracted from sample '{sample_id}'")
+                logger.warning(f"No features extracted for sample '{sample_id}'")
                 continue
             
             # Create DataFrame and save to Parquet
@@ -217,7 +214,6 @@ def run(ctx, project, force=False, max_cores=None):
             logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} images to '{output_file}'")
             
         except Exception as e:
-            logger.error(f"Error processing sample '{sample_id}': {e}")
-            raise
+            raiseCytoError(f"Error processing sample '{sample_id}': {e}", logger)
 
     log_command_success(logger, "Compute features")

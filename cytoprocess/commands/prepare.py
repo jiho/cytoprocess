@@ -4,7 +4,7 @@ import zipfile
 import numpy as np
 from pathlib import Path
 from skimage import io as skio
-from cytoprocess.utils import ensure_project_dir, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, setup_logging, log_command_start, log_command_success, raiseCytoError
 
 
 def _infer_ecotaxa_type(series):
@@ -145,9 +145,7 @@ def run(ctx, project, force=False, only_tsv=False):
     samples_file = Path(project) / "meta" / "samples.csv"
     logger.debug(f"Checking '{samples_file}'")
     if not samples_file.exists():
-        message = f"Samples file not found: '{samples_file}', run `cytoprocess list {project}`."
-        logger.error(message)
-        raise FileNotFoundError(message)
+        raiseCytoError(f"Samples file not found: '{samples_file}', run `cytoprocess list {project}`.", logger)
     
     logger.info(f"Reading reference samples list from '{samples_file}'")
     samples_df = pd.read_csv(samples_file)
@@ -170,8 +168,7 @@ def run(ctx, project, force=False, only_tsv=False):
     work_dir = Path(project) / "work"
     instrument_meta_file = work_dir / "sample_metadata_from_instrument.parquet"
     if not instrument_meta_file.exists():
-        logger.error(f"Missing metadata from the instrument, run `cytoprocess extract_meta {project}`.")
-        return
+        raiseCytoError(f"Missing metadata from the instrument, run `cytoprocess extract_meta {project}`.", logger)
 
     # If it is present, read it to (1) check that all samples are there and (2) merge it later
     at_least_one_missing = False
@@ -205,8 +202,7 @@ def run(ctx, project, force=False, only_tsv=False):
 
     
     if at_least_one_missing:
-        logger.error(f"Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.")
-        return
+        raiseCytoError("Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.", logger)
 
     ## 4. Detect extra samples in work/ and warn the user ----
 

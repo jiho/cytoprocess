@@ -3,7 +3,7 @@ import ijson
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success, raiseCytoError
 
 
 def _get_json_structure(json_data, prefix=""):
@@ -154,11 +154,9 @@ def run(ctx, project, list_keys=False):
                     keys.extend(_get_json_structure(instrument_data))
                 
             except ijson.JSONError as e:
-                logger.error(f"Failed to parse .jsong file '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Failed to parse .json file '{json_file.name}': {e}", logger)
             except Exception as e:
-                logger.error(f"Error reading '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Error reading '{json_file.name}': {e}", logger)
 
             logger.info(f"Found {len(keys)} metadata items in '{json_file.name}'")
 
@@ -184,8 +182,7 @@ def run(ctx, project, list_keys=False):
         config_file = Path(project) / "config.yaml"
         
         if not config_file.exists():
-            logger.error(f"Configuration file not found: '{config_file}'")
-            raise FileNotFoundError(f"Configuration file not found: '{config_file}'")
+            raiseCytoError(f"Configuration file not found: '{config_file}', run 'cytoprocess create {project}' again.", logger)
         
         logger.info(f"Read metadata fields list from '{config_file}'")
         with open(config_file, 'r') as f:
@@ -242,11 +239,9 @@ def run(ctx, project, list_keys=False):
                 # NB: -2 to exclude the sample_id and __pixel_size__ fields
                 
             except ijson.JSONError as e:
-                logger.error(f"Failed to parse .json file '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Failed to parse .json file '{json_file.name}': {e}", logger)
             except Exception as e:
-                logger.error(f"Error processing '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Error processing '{json_file.name}': {e}", logger)
         
         # Save to paquet in work directory
         work_dir = ensure_project_dir(project, "work")

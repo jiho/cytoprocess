@@ -163,28 +163,24 @@ def all(ctx, project, force):
     logger = setup_logging(command="all", project=project, debug=ctx.obj["debug"])
     logger.info(f"Running all processing steps for project: {project}")
     
-    try:
-        convert.run(ctx, project=project, force=force)
-        
-        extract_meta.run(ctx, project=project, list_keys=False)
 
-        extract_cyto.run(ctx, project=project, list_keys=False, force=force)
-        
-        summarise_pulses.run(ctx, project=project, force=force)
+    convert.run(ctx, project=project, force=force)
+    
+    extract_meta.run(ctx, project=project, list_keys=False)
 
-        extract_images.run(ctx, project=project, force=force)
-        
-        compute_features.run(ctx, project=project, force=force)
-        
-        prepare.run(ctx, project=project, force=force)
-        
-        upload.run(ctx, project=project)
-        
-        logger.info("All processing steps completed successfully")
-        
-    except Exception as e:
-        logger.error(f"Processing failed at one of the steps: {e}")
-        raise
+    extract_cyto.run(ctx, project=project, list_keys=False, force=force)
+    
+    summarise_pulses.run(ctx, project=project, force=force)
+
+    extract_images.run(ctx, project=project, force=force)
+    
+    compute_features.run(ctx, project=project, force=force)
+    
+    prepare.run(ctx, project=project, force=force)
+    
+    upload.run(ctx, project=project)
+    
+    logger.info("All processing steps completed successfully")
 
 
 @cli.command(name="cleanup")

@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import ensure_project_dir, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, raiseCytoError, setup_logging, log_command_start, log_command_success
 
 
 DEFAULT_EXTRA_FIELDS = "object_lon,object_lat,object_date,object_time,object_depth_min,object_depth_max,object_lon_end,object_lat_end"
@@ -34,8 +34,7 @@ def run(ctx, project, extra_fields=DEFAULT_EXTRA_FIELDS):
     # Check that the 'converted' directory exists
     converted_dir = Path(project) / "converted"
     if not converted_dir.exists():
-        logger.error(f"Converted directory not found: '{converted_dir}'. Run convert first.")
-        raise FileNotFoundError(f"Converted directory not found: '{converted_dir}'")
+        raiseCytoError(f"Converted directory not found: '{converted_dir}', run 'cytoprocess convert {project}' first.", logger)
 
     # Create metadata CSV with sample information   
     meta_dir = ensure_project_dir(project, "meta")
@@ -44,10 +43,9 @@ def run(ctx, project, extra_fields=DEFAULT_EXTRA_FIELDS):
     # Create DataFrame from converted files
     converted_files = list(converted_dir.glob("*.json"))
     if not converted_files:
-        logger.warning(f"No .json files found in '{converted_dir}'")
+        raiseCytoError(f"No .json files found in '{converted_dir}'", logger)
         return
     
-
     # Create 'samples' DataFrame
     samples = pd.DataFrame({
         'sample_id': [f.stem for f in converted_files]

@@ -6,7 +6,7 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
-from cytoprocess.utils import log_command_start, log_command_success, setup_logging
+from cytoprocess.utils import log_command_start, log_command_success, setup_logging, raiseCytoError
 
 
 def _get_or_create_bin_dir() -> Path:
@@ -53,8 +53,7 @@ def _download_latest_release(logger) -> str:
         with urllib.request.urlopen(api_url) as response:
             data = json.loads(response.read().decode())
     except Exception as e:
-        logger.error(f"Failed to fetch latest release: {e}")
-        raise
+        raiseCytoError(f"Failed to fetch latest release: {e}", logger)
     
     # search for the appropriate release file
     release_file = _get_release_file_name(logger)
@@ -119,8 +118,7 @@ def _download_latest_release(logger) -> str:
         logger.info(f"Successfully installed cyz2json to {symlink_path}")
     
     except Exception as e:
-        logger.error(f"Failed to download and install cyz2json: {e}")
-        raise
+        raiseCytoError(f"Failed to download and install cyz2json: {e}", logger)
     
     return str(symlink_path)
 
@@ -147,7 +145,7 @@ def run(ctx):
         result = subprocess.run([path, '--version'], check=True, capture_output=True, text=True)
         logger.info(f"cyz2json available at {path}, at version {result.stdout.strip()}")
     except Exception as e:
-        logger.error(f"Failed to install cyz2json: {e}")
+        raiseCytoError(f"Failed to install cyz2json: {e}", logger)
         raise
 
     log_command_success(logger, "Install cyz2json")

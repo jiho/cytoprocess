@@ -5,7 +5,7 @@ import time
 import yaml
 import keyring
 import requests
-from cytoprocess.utils import setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import setup_logging, log_command_start, log_command_success, raiseCytoError
 
 # EcoTaxa API base URL
 ECOTAXA_API_URL = "https://ecotaxa.obs-vlfr.fr/api"
@@ -184,20 +184,17 @@ def authenticate(username: str | None = None, password: str | None = None) -> st
         print("\nEcoTaxa Authentication Required")
         username = input("username (email): ").strip()
     if not username:
-        logger.error("EcoTaxa username is required")
-        return None
+        raiseCytoError("EcoTaxa username is required", logger)
     
     if not password:
         password = getpass.getpass("password: ")
     if not password:
-        logger.error("EcoTaxa password is required")
-        return None
+        raiseCytoError("EcoTaxa password is required", logger)
     
     # Attempt login
     token = _login(username, password)
     if token is None:
-        logger.error("Authentication failed. Please check your EcoTaxa username and password.")
-        return None
+        raiseCytoError("Authentication failed. Please check your EcoTaxa username and password.", logger)
     
     # Store the token
     if _store_token(token):
@@ -384,8 +381,7 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
     # Load config from project
     config_path =  project / "config.yaml"
     if not config_path.exists():
-        logger.error("Config file not found: %s", config_path)
-        return
+        raiseCytoError(f"Config file not found: '{config_path}', run 'cytoprocess create {project}' again.", logger)
 
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f) or {}
@@ -395,24 +391,19 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
     project_id = ecotaxa_config.get("project_id")
     
     if not project_id:
-        logger.error("EcoTaxa project_id is not set in config.yaml")
-        logger.error("Please edit config.yaml and set 'ecotaxa: project_id' to your EcoTaxa numeric project ID")
-        logger.info("You can find the project ID in the URL when viewing your project on EcoTaxa")
-        return
+        raiseCytoError(f"EcoTaxa project_id missing from '{config_path}'\nEdit the file to set 'ecotaxa: project_id'\nYou can find your EcoTaxa numeric project ID in the table at\n  https://ecotaxa.obs-vlfr.fr/prj", logger)
 
     ecotaxa_dir = project / "ecotaxa"
 
     # Authenticate
     token = authenticate(username=username, password=password)
     if token is None:
-        logger.error("Authentication failed, cannot proceed with upload")
-        return
+        raiseCytoError("Authentication failed, cannot proceed with upload", logger)
     
     # Find zip files to upload
     zip_files = sorted(ecotaxa_dir.glob("ecotaxa_*.zip"))
     if not zip_files:
-        logger.warning("No ecotaxa_*.zip files found in %s", ecotaxa_dir)
-        return
+        raiseCytoError(f"No ecotaxa_*.zip files found in '{ecotaxa_dir}', run 'cytoprocess prepare_ecotaxa {project}' first.", logger)
     
     logger.info(f"Found {len(zip_files)} zip file(s) to upload")
     

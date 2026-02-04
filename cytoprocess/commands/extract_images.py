@@ -2,7 +2,7 @@ import logging
 import base64
 import shutil
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success, raiseCytoError
 
 
 def run(ctx, project, force=False):
@@ -83,8 +83,7 @@ def run(ctx, project, force=False):
             total_images += image_count
                 
         except Exception as e:
-            logger.error(f"Error processing '{json_file.name}': {e}")
-            raise
+            raiseCytoError(f"Error processing '{json_file.name}': {e}", logger)
     
     logger.info(f"Total images extracted: {total_images}")
     log_command_success(logger, "Extract images")

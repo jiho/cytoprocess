@@ -1,7 +1,7 @@
 import logging
 import subprocess
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_logging, log_command_start
+from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_logging, log_command_start, raiseCytoError
 from cytoprocess.commands import install
 
 
@@ -24,8 +24,7 @@ def run(ctx, project, force=False):
     try:
         cyz2json_path = install._check_or_get_cyz2json(logger)
     except Exception as e:
-        logger.error(f"Failed to get Cyz2Json binary: {e}")
-        raise
+        raiseCytoError(f"Failed to get Cyz2Json binary: {e}", logger)
         
     # Create processed directory if it doesn't exist
     converted_dir = ensure_project_dir(project, "converted")
@@ -55,10 +54,8 @@ def run(ctx, project, force=False):
             )
             logger.debug(f"Successfully converted '{cyz_file.name}'")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to convert '{cyz_file.name}': {e.stderr}")
-            raise
+            raiseCytoError(f"Failed to convert '{cyz_file.name}': {e.stderr}", logger)
         except Exception as e:
-            logger.error(f"Error converting '{cyz_file.name}': {e}")
-            raise
+            raiseCytoError(f"Error converting '{cyz_file.name}': {e}", logger)
 
     log_command_success(logger, "Convert")

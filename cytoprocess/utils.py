@@ -1,6 +1,7 @@
 """Utility functions for cytoprocess."""
 
 import logging
+import click
 import ijson
 from pathlib import Path
 from datetime import datetime
@@ -206,3 +207,22 @@ def get_sample_files(project: str, logger: logging.Logger, kind: str = "json", c
             logger.debug(f"Found file '{files[0].name}' matching sample '{sample}'")
     
     return files
+
+
+def raiseCytoError(message: str, logger: logging.Logger = None):
+    """
+    Custom exception for cytoprocess errors.
+    
+    Args:
+        message: The error message to display.
+        logger: The logger instance to use for logging the error.
+    
+    Examples:
+        >>> raiseCytoError("An error occurred")
+    """
+    # log the error if logger is provided
+    # this allows to log this error in the file log as well
+    # (which loggs at DEBUG level)
+    if logger:
+        logger.debug(message)
+    raise click.ClickException(message)

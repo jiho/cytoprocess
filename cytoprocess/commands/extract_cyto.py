@@ -2,7 +2,7 @@ import logging
 import yaml
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success, raiseCytoError
 import ijson
 
 
@@ -127,12 +127,10 @@ def run(ctx, project, list_keys=False, force=False):
                 paths.extend(_get_parameters_structure(parameters))
                                 
             except Exception as e:
-                logger.error(f"Error reading '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Error reading '{json_file.name}': {e}", logger)
         
         if not paths:
-            logger.error("No parameter paths found in any .json file")
-            return
+            raiseCytoError("No parameter paths found in any .json file", logger)
         
         # Deduplicate and sort
         paths = sorted(set(paths))
@@ -154,8 +152,7 @@ def run(ctx, project, list_keys=False, force=False):
         logger.info(f"Read selected cytometric features list from '{config_file}'")
         
         if not config_file.exists():
-            logger.error(f"Configuration file not found: '{config_file}'")
-            raise FileNotFoundError(f"Configuration file not found: '{config_file}'")
+            raiseCytoError(f"Configuration file not found: '{config_file}', run 'cytoprocess create {project}' again.", logger)
         
         with open(config_file, 'r') as f:
             config = yaml.safe_load(f)
@@ -163,8 +160,7 @@ def run(ctx, project, list_keys=False, force=False):
         # Get the 'object' section from config
         object_config = config.get('object')
         if not object_config or not isinstance(object_config, dict):
-            logger.error(f"No 'object' section found in '{config_file}'")
-            raise ValueError("Configuration file must contain an 'object' section with cytometric feature mappings")
+            raiseCytoError(f"No 'object' section found in '{config_file}'. Configuration file must contain an 'object' section with cytometric feature mappings.", logger)
         
         logger.debug(f"Found {len(object_config)} mappings in 'object' section")
         
@@ -243,7 +239,6 @@ def run(ctx, project, list_keys=False, force=False):
                 logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")
                 
             except Exception as e:
-                logger.error(f"Error processing '{json_file.name}': {e}")
-                raise
+                raiseCytoError(f"Error processing '{json_file.name}': {e}", logger)
 
     log_command_success(logger, "Extract cytometric features")

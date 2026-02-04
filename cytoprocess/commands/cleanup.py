@@ -1,7 +1,8 @@
 import logging
 from pathlib import Path
 import shutil
-from cytoprocess.utils import setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import setup_logging, log_command_start, log_command_success, raiseCytoError
+
 
 def _remove_directory(directory: Path, logger: logging.Logger) -> bool:
     """Remove a directory and all its contents.
@@ -24,8 +25,7 @@ def _remove_directory(directory: Path, logger: logging.Logger) -> bool:
         logger.info(f"Successfully removed '{directory}'")
         return True
     except Exception as e:
-        logger.error(f"Failed to remove '{directory}': {e}")
-        raise
+        raiseCytoError(f"Error removing directory: {e}", logger)
 
 
 def run(ctx, project):
