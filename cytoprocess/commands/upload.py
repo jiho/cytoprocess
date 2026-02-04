@@ -206,13 +206,14 @@ def authenticate(username: str | None = None, password: str | None = None) -> st
     return token
 
 
-def upload_file(token: str, zip_path: Path) -> dict:
+def upload_file(token: str, zip_path: Path, timeout: int = 300) -> dict:
     """
     Upload a zip file to EcoTaxa user's file area.
     
     Args:
         token: JWT authentication token
         zip_path: Path to the zip file to upload
+        timeout: Timeout in seconds for the upload request
         
     Returns:
         Dictionary with 'server_path' if successful, or 'errors' list if failed.
@@ -230,8 +231,7 @@ def upload_file(token: str, zip_path: Path) -> dict:
                 f"{ECOTAXA_API_URL}/user_files/",
                 headers={"Authorization": f"Bearer {token}"},
                 files={"file": (zip_path.name, f, "application/zip")},
-                timeout=300,  # 5 minutes for upload
-                # TODO make this configurable in config.yaml and or CLI
+                timeout=timeout
             )
         
         if response.status_code != 200:
@@ -423,7 +423,7 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
         
         # Upload
         logger.info(f"  Uploading file: '{zip_path.name}'")
-        upload_result = upload_file(token, zip_path)
+        upload_result = upload_file(token, zip_path, timeout=ecotaxa_config.get("upload_timeout_seconds", 300))
         logger.debug(f"Upload result: {upload_result}")
         
         if upload_result.get("errors"):
@@ -460,8 +460,8 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
         # Monitor job until completion
         success = monitor_job(token, job_id)
         if success:
-            logger.info(f"  ✓ Import completed successfully")
+            logger.info(f"  ✓ Import completed")
         else:
             logger.warning(f"  ✗ Import failed or requires manual intervention")
 
-    log_command_success(logger, "Upload completed")
+    log_command_success(logger, "Upload")

@@ -5,6 +5,7 @@
 # You can find this ID in the URL when viewing your project on EcoTaxa.
 ecotaxa:
   project_id: null
+  upload_timeout_seconds: 300 
 
 
 # This part maps instrument metadata items from the .json files to
