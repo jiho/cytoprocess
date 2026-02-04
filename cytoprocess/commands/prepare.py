@@ -200,7 +200,6 @@ def run(ctx, project, force=False, only_tsv=False):
             logger.warning(f"Missing image features, run `cytoprocess --sample '{sample_id}' compute_features {project}`")
             at_least_one_missing = True
 
-    
     if at_least_one_missing:
         raiseCytoError("Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.", logger)
 
