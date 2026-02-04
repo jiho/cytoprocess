@@ -235,7 +235,8 @@ def run(ctx, project, force=False, only_tsv=False):
         zip_file = ecotaxa_dir / f"ecotaxa_{sample_id}.zip"
 
         # Skip if output file exists and force is not set
-        if (tsv_file.exists() and only_tsv and not force) or (zip_file.exists() and not force):
+        if (tsv_file.exists() and only_tsv and not force) or \
+           (zip_file.exists() and not only_tsv and not force):
             logger.info(f"Skipping '{sample_id}', ecotaxa_*." + ("tsv" if only_tsv else "zip") + " file already exists (use --force to overwrite)")
             continue
         
