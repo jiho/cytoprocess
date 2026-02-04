@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success, raiseCytoError
 import ijson
-
+import numpy as np
 
 def _get_parameters_structure(parameters):
     """
@@ -187,7 +187,35 @@ def run(ctx, project, list_keys=False, force=False):
                     continue
                 
                 logger.debug(f"Found {len(particles_data)} particles in '{json_file.name}'")
-                
+
+                # Use the sets definition to compute imaging ratio and imaged/analysed volume
+                # This creates one acquisition per set and we later link each particle to its acquisition
+                sets = get_json_section(json_file, 'set_information', logger)
+                # default acquisition
+                set_stats_df = pd.DataFrame({'name': sample_id,
+                                             'acq_imaging_ratio': 0,
+                                             'acq_imaged_volume_uL': 0,
+                                             'acq_analysed_volume_uL': 0}, index=[0])
+                if sets is None:
+                    logger.warning(f"No set information found in '{json_file.name}'; CytoProcess will not be able to compute subsampling factors.")
+                else:
+                    # Keep only sets with images and a valid imaged_volume
+                    sets_stats = [s for s in sets.get("statistics", []) if
+                                  s.get("images", 0) > 0 and
+                                  not s.get("imaged_volume") == 'NaN']
+                    # Compute relevant quantifies
+                    for s in sets_stats:
+                        imaging_ratio = np.float32(s['images']) / np.float32(s['count'])
+                        analysed_volume = np.float32(s['imaged_volume']) / imaging_ratio
+                        sets_stats_df = pd.concat([
+                            set_stats_df,
+                            pd.DataFrame({'name': s['name'],
+                                          'acq_imaging_ratio': imaging_ratio,
+                                          'acq_imaged_volume_uL': np.float32(s['imaged_volume']),
+                                          'acq_analysed_volume_uL': analysed_volume}, index=[0])])
+                # Rename 'name' to its actual meaning
+                sets_stats_df = sets_stats_df.rename(columns={'name': 'acq_id'})
+
                 # Prepare data structure: list of dicts, one per particle
                 rows = []
                 
@@ -209,8 +237,20 @@ def run(ctx, project, list_keys=False, force=False):
                     # Create a row for this particle
                     row = {
                         'sample_id': sample_id,
-                        'object_id': f"{sample_id}_{particle_idx}"
+                        'object_id': f"{sample_id}_{particle_idx}",
                     }
+
+                    # Extract the set the particle is in based on its 'region' property
+                    acq_id = 'Other imaged particles'
+                    region = particle.get('region', [])
+                    if region and len(region) > 0:
+                        # Remove the fact that a given particle is in 'All Imaged Particles' = we don't care
+                        region = [r for r in region if r != 'All Imaged Particles']
+                        if len(region) > 0:
+                            acq_id = region[0]
+                        if len(region) > 1:
+                            logger.warning(f"Particle {particle_idx} belongs to multiple sets ({region}) in '{json_file.name}'; only the first one ('{acq_id}') will be considered.")
+                    row['acq_id'] = acq_id
                     
                     # Extract each mapped value
                     for json_path, column_name in object_config.items():
@@ -233,6 +273,8 @@ def run(ctx, project, list_keys=False, force=False):
                 
                 # Create DataFrame and save to Parquet
                 df = pd.DataFrame(rows)
+                # add acquisition stats
+                df = df.merge(sets_stats_df, how='left', on='acq_id')
                 df.to_parquet(output_file, index=False)
                 
                 logger.info(f"Saved {df.shape[1]} properties for {df.shape[0]} particles to '{output_file}'")

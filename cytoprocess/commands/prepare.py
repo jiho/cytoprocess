@@ -266,6 +266,10 @@ def run(ctx, project, force=False, only_tsv=False):
         df = df.merge(sample_meta, on=['sample_id'], how='left')
         df = df.merge(instrument_meta, on=['sample_id'], how='left')
 
+        # Define process_id as acq_id:
+        # the metadata extracted from the JSON is the same for the whole sample anyway
+        df['process_id'] = df['acq_id']
+
         logger.debug(f"Found {len(df)} objects for sample '{sample_id}'")
 
         # Add image filename (img_file_name) based on particle_id

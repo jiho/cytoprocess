@@ -205,6 +205,8 @@ def run(ctx, project, list_keys=False):
                 # Create a row for this file
                 row = {}
                 
+                # Define the sample_id to join this with the rest of the data
+                row['sample_id'] = json_file.stem
                 # Process each section (sample, acq, process)
                 for section_name in ['sample', 'acq', 'process']:
                     section_keys = config.get(section_name)
@@ -212,10 +214,6 @@ def run(ctx, project, list_keys=False):
                         continue
                     
                     logger.debug(f"Processing section: {section_name}")
-                    
-                    # Define the identifier for this row and section
-                    # NB: there is only *one* acq and *one* process per sample, so we use the same ID everywhere
-                    row[f"{section_name}_id"] = json_file.stem
 
                     # Extract each key in this section
                     for json_path, column_name in section_keys.items():
