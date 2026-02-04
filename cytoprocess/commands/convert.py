@@ -43,6 +43,7 @@ def run(ctx, project, force=False):
         try:
             # Build and log the command
             command = [cyz2json_path, str(cyz_file), "--raw", "--imaging-set-information","--output", str(json_file)]
+            # TODO add --imaging-set-definition my_new_set_definition.xml as an option
             logger.debug(f"Running command: {' '.join(command)}")
             
             # Run Cyz2Json to convert the file

@@ -203,6 +203,7 @@ def run(ctx, project, force=False, only_tsv=False):
     if at_least_one_missing:
         raiseCytoError("Missing input for some samples. Please run the required extraction steps before preparing EcoTaxa files.", logger)
 
+
     ## 4. Detect extra samples in work/ and warn the user ----
 
     if not sample:
