@@ -36,7 +36,7 @@ def _get_release_file_name(logger) -> str:
     elif system == "windows":
         release_file = "cyz2json-windows-latest.zip"
     else:
-        raise RuntimeError(f"Unsupported OS: {system}")
+        raiseCytoError(f"Unsupported OS: {system}", logger)
     
     logger.debug(f"Determined release file name: {release_file}")
     return release_file
@@ -67,7 +67,7 @@ def _download_latest_release(logger) -> str:
     
     if not matching_asset:
         available_assets = [a["name"] for a in assets]
-        raise RuntimeError(f"No file {release_file} within {available_assets}")
+        raiseCytoError(f"No file {release_file} within {available_assets}", logger)
     
     # 2. Download and extract the appropriate release file
     logger.info(f"Downloading and installing {matching_asset['name']}")

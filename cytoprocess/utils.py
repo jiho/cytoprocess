@@ -184,10 +184,10 @@ def get_sample_files(project: str, logger: logging.Logger, kind: str = "json", c
     elif kind == "cyz":
         target_dir = Path(project) / "raw"
     else:
-        raise ValueError(f"kind must be 'json' or 'cyz', got '{kind}'")
+        raiseCytoError(f"kind must be 'json' or 'cyz', got '{kind}'", logger)
         
     if not target_dir.exists():
-        raise FileNotFoundError(f"Directory for {kind} files not found: '{target_dir}' ; run `" + ("convert" if kind == "json" else "create") + "` command first")   
+        raiseCytoError(f"Directory for {kind} files not found: '{target_dir}' ; run `" + ("convert" if kind == "json" else "create") + "` command first", logger)   
     
     # List all files of the specified kind
     logger.debug(f"Listing .{kind} files in '{target_dir}'")
