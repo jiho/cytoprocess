@@ -411,7 +411,6 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
     project_info = _get_project_info(token, project_id)
     if project_info:
         project_name = project_info.get("title", "Unknown")
-        logger.info(f"Project name: {project_name}")
     else:
         project_name = "Unknown"
         logger.warning("Could not retrieve project information")
@@ -419,21 +418,22 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
     
     # Get existing samples in the project
     existing_samples = _get_project_samples(token, project_id)
-    logger.info(f"Found {len(existing_samples)} existing sample(s) in project")
+    logger.debug(f"Found {len(existing_samples)} existing sample(s) in project")
     
     # Process each zip file: upload, import, and monitor until complete
-    for i, zip_path in enumerate(zip_files, 1):
+    for zip_path in zip_files:
         # Extract sample ID from filename (ecotaxa_<sample_id>.zip)
         sample_id = zip_path.stem.replace("ecotaxa_", "")
         
         # Skip if sample already exists
         if sample_id in existing_samples:
-            print(f"\n[{i}/{len(zip_files)}] Skipping: {zip_path.name} (sample '{sample_id}' already exists)")
+            print(f"Skipping: {zip_path.name} (sample '{sample_id}' already exists)")
             continue
 
-        print(f"\n[{i}/{len(zip_files)}] Processing: {zip_path.name}")
+        print(f"Processing {sample_id}")
         
         # Upload
+        logger.info(f"  Uploading file: '{zip_path.name}'")
         upload_result = upload_file(token, zip_path)
         logger.debug(f"Upload result: {upload_result}")
         
@@ -447,9 +447,11 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
             logger.warning(f"  No server path returned, upload may have failed")
             continue
         
-        print(f"  ✓ Uploaded to EcoTaxa")
+        logger.debug(f"Uploaded to server path: '{server_path}'")
+        logger.info(f"  ✓ Upload completed")
         
         # Import
+        logger.debug(f"Importing {sample_id}")
         server_directory = Path(server_path).stem
         import_result = import_file(token, project_id, server_directory)
         logger.debug(f"Import result: {import_result}")
@@ -461,17 +463,16 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
         
         job_id = import_result.get("job_id", 0)
         if job_id <= 0:
-            logger.warning("  No job ID returned, import may have failed")
+            logger.warning("No job ID returned, import may have failed")
             continue
         
-        logger.info(f"  Import job ID: {job_id}")
-        print(f"  → Import job started (ID: {job_id}), monitoring progress...")
+        logger.info(f"  Import started (job ID: {job_id}), monitoring progress...")
         
         # Monitor job until completion
         success = monitor_job(token, job_id)
         if success:
-            print(f"  ✓ Import completed successfully")
+            logger.info(f"  ✓ Import completed successfully")
         else:
-            print(f"  ✗ Import failed or requires manual intervention")
+            logger.warning(f"  ✗ Import failed or requires manual intervention")
 
     log_command_success(logger, "Upload completed")
