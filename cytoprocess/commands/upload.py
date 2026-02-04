@@ -361,15 +361,6 @@ def monitor_job(token: str, job_id: int, poll_interval: float = 2.0) -> bool:
 
 
 def run(ctx, project, username: str | None = None, password: str | None = None):
-    """
-    Upload prepared EcoTaxa zip files to an EcoTaxa project.
-    
-    Args:
-        ctx: Click context
-        project: Path to the Cytoprocess project
-        username: Optional EcoTaxa email address
-        password: Optional EcoTaxa password
-    """
     logger = setup_logging(command="upload", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Uploading samples to EcoTaxa", project)

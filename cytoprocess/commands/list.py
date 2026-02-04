@@ -8,17 +8,6 @@ DEFAULT_EXTRA_FIELDS = "object_lon,object_lat,object_date,object_time,object_dep
 
 
 def run(ctx, project, extra_fields=DEFAULT_EXTRA_FIELDS):
-    """
-    List all samples in a project and create/update the samples.csv metadata file.
-    
-    This creates a CSV file in the meta directory with the list of all samples
-    (based on converted .json files), which can be used to add custom metadata.
-    
-    Args:
-        ctx: Click context
-        project: Path to the project directory
-        extra_fields: Comma-separated string of extra field names to add as columns
-    """
     logger = setup_logging(command="list", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Listing samples", project)
