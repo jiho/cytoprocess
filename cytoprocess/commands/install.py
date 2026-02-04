@@ -1,4 +1,3 @@
-import logging
 import os
 import platform
 import subprocess
@@ -7,10 +6,7 @@ import json
 import tempfile
 import zipfile
 from pathlib import Path
-from cytoprocess.utils import log_command_start, log_command_success
-
-
-logger = logging.getLogger("install")
+from cytoprocess.utils import log_command_start, log_command_success, setup_logging
 
 
 def _get_or_create_bin_dir() -> Path:
@@ -29,7 +25,7 @@ def _get_executable_name() -> str:
     return executable_name
 
 
-def _get_release_file_name() -> str:
+def _get_release_file_name(logger) -> str:
     """Get the appropriate release file name based on OS."""
     system = platform.system().lower()
     
@@ -46,7 +42,7 @@ def _get_release_file_name() -> str:
     return release_file
 
 
-def _download_latest_release() -> str:
+def _download_latest_release(logger) -> str:
     """Download the latest release of cyz2json and return the path to the executable."""
     # 1. Fetch latest release info from GitHub API
     logger.info("Fetching latest cyz2json release info from GitHub")
@@ -61,7 +57,7 @@ def _download_latest_release() -> str:
         raise
     
     # search for the appropriate release file
-    release_file = _get_release_file_name()
+    release_file = _get_release_file_name(logger)
     assets = data.get("assets", [])
     
     matching_asset = None
@@ -129,7 +125,7 @@ def _download_latest_release() -> str:
     return str(symlink_path)
 
 
-def _check_or_get_cyz2json() -> str:
+def _check_or_get_cyz2json(logger) -> str:
     """Get the path to the cyz2json executable, downloading if necessary."""
     bin_dir = _get_or_create_bin_dir()
     executable_name = _get_executable_name()
@@ -137,16 +133,17 @@ def _check_or_get_cyz2json() -> str:
     
     if not executable_path.exists():
         logger.info(f"Cyz2Json not found at {executable_path}, downloading")
-        return _download_latest_release()
+        return _download_latest_release(logger)
     
     logger.debug(f"Using existing cyz2json at {executable_path}")
     return str(executable_path)
 
 
 def run(ctx):
-    log_command_start(logger, "Installing cyz2json")
+    logger = setup_logging(command="install", project=None, debug=ctx.obj["debug"])
+    log_command_start(logger, "Installing cyz2json", project=None)
     try:
-        path = _check_or_get_cyz2json()
+        path = _check_or_get_cyz2json(logger)
         result = subprocess.run([path, '--version'], check=True, capture_output=True, text=True)
         logger.info(f"cyz2json available at {path}, at version {result.stdout.strip()}")
     except Exception as e:

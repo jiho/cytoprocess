@@ -6,7 +6,7 @@ from pathlib import Path
 from multiprocessing import Pool
 from skimage import io, feature, morphology, measure, filters
 from scipy import ndimage
-from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, log_command_start, log_command_success, setup_logging
 
 
 def _segment_particle(image):
@@ -134,8 +134,7 @@ def _process_single_image(args):
 
 
 def run(ctx, project, force=False, max_cores=None):
-    logger = logging.getLogger("compute_features")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="compute_features", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Computing image features", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))

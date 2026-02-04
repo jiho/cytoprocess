@@ -7,45 +7,66 @@ from datetime import datetime
 import copy
 import re
 
-logger = logging.getLogger("cytoprocess.utils")
 
-def setup_file_logging(logger: logging.Logger, project: str):
+def setup_logging(command: str = None, project: str = None, debug: bool = False) -> logging.Logger:
     """
-    Set up file logging in the project's logs directory.
+    Set up logging for a command, with optional file and console handlers.
     
     Args:
-        logger: The logger instance to configure
-        project: The project directory path
+        command: The command name (e.g., 'convert', 'cleanup')
+        project: The project directory path. If provided, logs are also written to file.
+        debug: If True, console logs at DEBUG level; otherwise INFO level.
+        
+    Returns:
+        A configured logger instance for the command.
         
     Examples:
-        >>> logger = logging.getLogger("cytoprocess.example")
-        >>> setup_file_logging(logger, '/path/to/project')
+        >>> logger = setup_logging('convert', '/path/to/project', debug=True)
+        >>> logger = setup_logging('install')  # Console only
     """
-    # Define a custom file handler that removes newlines from log messages
-    # based on https://github.com/python/cpython/issues/94503
-    class CleanupFormatter:
-        def emit(self, record):
-            s = record.getMessage()
-            # Remove newlines
-            s = s.replace("\n", "")
-            # Remove ANSI color codes
-            s = re.sub(r'\x1b\[[0-9;]*m', '', s)
-            rec = copy.copy(record)
-            rec.msg = s
-            super().emit(rec)
-    class FileHandler(CleanupFormatter, logging.FileHandler):
-        pass
 
-    # Ensure logs directory exists
-    log_dir = ensure_project_dir(project, "logs")
+    logger = logging.getLogger(f"{command}" if command else "cytoprocess")
+    logger.setLevel(logging.DEBUG)  # Logger captures all; handlers filter
     
-    # Create a file handler with different settings from the console handler
-    log_filename = f"{datetime.now().strftime('%Y-%m-%d')}_cytoprocess.log"
-    file_handler = FileHandler(log_dir / log_filename, mode='a')
-    file_handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)-7s\t%(name)-16s\t%(message)s'))
+    # Prevent adding duplicate handlers if called multiple times
+    if logger.handlers:
+        return logger
     
-    # modify the logger to add the file handler
-    logger.addHandler(file_handler)
+    # Default console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG if debug else logging.INFO)
+    console_handler.setFormatter(logging.Formatter('%(message)s'))
+    logger.addHandler(console_handler)
+    
+    # File handler (only if project is specified)
+    if project is not None and Path(project).exists():
+        # Define a custom file handler that cleans log messages
+        class CleanupFormatter:
+            def emit(self, record):
+                s = record.getMessage()
+                # Remove newlines
+                s = s.replace("\n", " ")
+                # Remove ANSI color codes
+                s = re.sub(r'\x1b\[[0-9;]*m', '', s)
+                # Remove Emojis
+                s = re.sub(r'[^\x00-\x7F]+', '>', s)
+                rec = copy.copy(record)
+                rec.msg = s
+                super().emit(rec)
+        class CleanFileHandler(CleanupFormatter, logging.FileHandler):
+            pass
+        
+        # Ensure logs directory exists
+        log_dir = Path(project) / "logs"
+        ensure_project_dir(project, "logs")
+        log_filename = f"{datetime.now().strftime('%Y-%m-%d')}_cytoprocess.log"
+        
+        file_handler = CleanFileHandler(log_dir / log_filename, mode='a')
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s\t%(levelname)-7s\t%(name)-16s\t%(message)s'))
+        logger.addHandler(file_handler)
+    
+    return logger
 
 
 def log_command_start(logger: logging.Logger, message: str, project: str):
@@ -63,7 +84,7 @@ def log_command_start(logger: logging.Logger, message: str, project: str):
     """
     start = "\x1b[1;34m" # bold blue
     reset = "\x1b[0m"
-    logger.info(f"\n{start}🛠️ {message} in project '{Path(project).stem}'{reset}")
+    logger.info(f"\n{start}🛠️ {message} " + (f"in project '{Path(project).stem}'" if project else "") + f"{reset}")
 
 
 def log_command_success(logger: logging.Logger, command: str):
@@ -80,7 +101,7 @@ def log_command_success(logger: logging.Logger, command: str):
     """
     start = "\x1b[0;32m" # non bold green
     reset = "\x1b[0m"
-    logger.info(f"{start}✅ {command} operation completed successfully{reset}")
+    logger.info(f"{start}✅ {command} operation successful{reset}")
 
 
 def ensure_project_dir(project: str, subdir: str) -> Path:
@@ -105,7 +126,7 @@ def ensure_project_dir(project: str, subdir: str) -> Path:
     return target_dir
 
 
-def get_json_section(json_file: Path, key: str):
+def get_json_section(json_file: Path, key: str, logger: logging.Logger):
     """
     Load a specific section from a JSON file using streaming.
     
@@ -117,8 +138,9 @@ def get_json_section(json_file: Path, key: str):
         The section as a dict/list, or None if not found.
         
     Examples:
-        >>> instrument = get_json_section(Path('data.json'), 'instrument')
-        >>> images = get_json_section(Path('data.json'), 'images')
+        >>> logger = logging.getLogger("cytoprocess.example")
+        >>> instrument = get_json_section(Path('data.json'), 'instrument', logger)
+        >>> images = get_json_section(Path('data.json'), 'images', logger)
     """
     logger.debug(f"Reading '{key}' section from {json_file.name}")
 
@@ -133,7 +155,7 @@ def get_json_section(json_file: Path, key: str):
     return data
 
 
-def get_sample_files(project: str, kind: str = "json", ctx=None) -> list:
+def get_sample_files(project: str, logger: logging.Logger, kind: str = "json", ctx=None) -> list:
     """
     Get a list of files from a project's directory.
     

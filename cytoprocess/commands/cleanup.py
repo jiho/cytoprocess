@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
-from cytoprocess.utils import setup_file_logging, log_command_start, log_command_success
 import shutil
+from cytoprocess.utils import setup_logging, log_command_start, log_command_success
 
 def _remove_directory(directory: Path, logger: logging.Logger) -> bool:
     """Remove a directory and all its contents.
@@ -29,8 +29,7 @@ def _remove_directory(directory: Path, logger: logging.Logger) -> bool:
 
 
 def run(ctx, project):
-    logger = logging.getLogger("cleanup")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="cleanup", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Cleaning up intermediate files", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))

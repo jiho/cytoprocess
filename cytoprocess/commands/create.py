@@ -3,12 +3,11 @@ import os
 import shutil
 from pathlib import Path
 
-from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, setup_logging, log_command_start, log_command_success
 
 
 def run(ctx, project):
-    logger = logging.getLogger("create")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="create", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Creating project", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))

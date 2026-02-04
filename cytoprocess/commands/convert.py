@@ -1,13 +1,12 @@
 import logging
 import subprocess
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_file_logging, log_command_start
+from cytoprocess.utils import get_sample_files, ensure_project_dir, log_command_success, setup_logging, log_command_start
 from cytoprocess.commands import install
 
 
 def run(ctx, project, force=False):
-    logger = logging.getLogger("convert")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="convert", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Converting .cyz files", project)
     
@@ -16,14 +15,14 @@ def run(ctx, project, force=False):
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get .cyz files from raw directory
-    cyz_files = get_sample_files(project, kind="cyz", ctx=ctx)
+    cyz_files = get_sample_files(project, logger, kind="cyz", ctx=ctx)
     if (not cyz_files):
         return
     
     # Get the path to Cyz2Json binary
     logger.debug("Getting path to Cyz2Json binary")
     try:
-        cyz2json_path = install._check_or_get_cyz2json()
+        cyz2json_path = install._check_or_get_cyz2json(logger)
     except Exception as e:
         logger.error(f"Failed to get Cyz2Json binary: {e}")
         raise

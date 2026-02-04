@@ -5,7 +5,7 @@ import time
 import yaml
 import keyring
 import requests
-from cytoprocess.utils import setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import setup_logging, log_command_start, log_command_success
 
 # EcoTaxa API base URL
 ECOTAXA_API_URL = "https://ecotaxa.obs-vlfr.fr/api"
@@ -373,8 +373,7 @@ def run(ctx, project, username: str | None = None, password: str | None = None):
         username: Optional EcoTaxa email address
         password: Optional EcoTaxa password
     """
-    logger = logging.getLogger("list")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="upload", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Uploading samples to EcoTaxa", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))

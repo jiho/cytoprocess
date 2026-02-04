@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import pandas as pd
 from numpy.polynomial.polynomial import Polynomial
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
 
 
 def _normalise_pulse(values):
@@ -42,15 +42,14 @@ def _fit_polynomial(pulse, n_poly):
 
 
 def run(ctx, project, n_poly=10, force=False):
-    logger = logging.getLogger("summarise_pulses")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="summarise_pulses", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Summarising pulse shapes", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     logger.debug(f"Using {n_poly} polynomial coefficients")
     
     # Get JSON files from converted directory
-    json_files = get_sample_files(project, kind="json", ctx=ctx)
+    json_files = get_sample_files(project, logger, kind="json", ctx=ctx)
     if not json_files:
         return
     
@@ -73,7 +72,7 @@ def run(ctx, project, n_poly=10, force=False):
             logger.debug(f"Extracting pulse shapes from '{json_file.name}'")
             
             # Load the particles section of the json file
-            particles_data = get_json_section(json_file, 'particles')
+            particles_data = get_json_section(json_file, 'particles', logger)
 
             if particles_data is None or len(particles_data) == 0:
                 logger.warning(f"No particles found in '{json_file.name}'")

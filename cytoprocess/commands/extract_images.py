@@ -2,12 +2,11 @@ import logging
 import base64
 import shutil
 from pathlib import Path
-from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import get_sample_files, ensure_project_dir, get_json_section, setup_logging, log_command_start, log_command_success
 
 
 def run(ctx, project, force=False):
-    logger = logging.getLogger("extract_images")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="extract_images", project=project, debug=ctx.obj["debug"])
 
     log_command_start(logger, "Extracting images", project)
     
@@ -16,7 +15,7 @@ def run(ctx, project, force=False):
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Get JSON files from converted directory
-    json_files = get_sample_files(project, kind="json", ctx=ctx)
+    json_files = get_sample_files(project, logger, kind="json", ctx=ctx)
     if not json_files:
         return
    
@@ -45,7 +44,7 @@ def run(ctx, project, force=False):
             sample_images_dir = ensure_project_dir(project, f"images/{sample_name}")
             
             # Load the images section from the JSON file
-            images = get_json_section(json_file, 'images')
+            images = get_json_section(json_file, 'images', logger)
             
             if images is None:
                 logger.warning(f"No images found in '{json_file.name}'")

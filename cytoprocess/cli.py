@@ -4,10 +4,9 @@
 # This consists of a main command (cytoprocess) with subcommands for each processing step.
 #
 
-import logging
-import sys
 import click
 from pathlib import Path
+from cytoprocess.utils import setup_logging
 
 # List commands in the order they appear in this file
 class NaturalOrderGroup(click.Group):
@@ -27,16 +26,6 @@ def cli(ctx, debug, sample):
         sample_path = Path(sample)
         sample = sample_path.stem
     ctx.obj["sample"] = sample
-    
-    # Set up logging
-    level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(
-        level=level,
-        stream=sys.stdout,
-        format="%(message)s",
-    )
-    logger = logging.getLogger("cytoprocess")
-    logger.debug(f"CLI started (debug={debug}, sample={sample})")
 
 
 
@@ -169,7 +158,7 @@ def _all(ctx, project, force):
         upload,
     )
     
-    logger = logging.getLogger("cytoprocess.cli")
+    logger = setup_logging(command="all", project=project, debug=ctx.obj["debug"])
     logger.info(f"Running all processing steps for project: {project}")
     
     try:

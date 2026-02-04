@@ -4,7 +4,7 @@ import zipfile
 import numpy as np
 from pathlib import Path
 from skimage import io as skio
-from cytoprocess.utils import ensure_project_dir, setup_file_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, setup_logging, log_command_start, log_command_success
 
 
 def _infer_ecotaxa_type(series):
@@ -131,8 +131,7 @@ def _add_scale_bar(input_path: Path, output_path: Path, pixel_size: float):
 
 
 def run(ctx, project, force=False, only_tsv=False):
-    logger = logging.getLogger("prepare")
-    setup_file_logging(logger, project)
+    logger = setup_logging(command="prepare", project=project, debug=ctx.obj["debug"])
     
     log_command_start(logger, "Preparing EcoTaxa files", project)
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
