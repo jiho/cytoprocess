@@ -13,23 +13,25 @@ class NaturalOrderGroup(click.Group):
     def list_commands(self, ctx):
         return self.commands.keys()
 
+
 @click.group(cls=NaturalOrderGroup)
 @click.option("--debug", is_flag=True, default=False, help="Show debugging messages.")
 @click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file.")
 @click.pass_context
 def cli(ctx, debug, sample):
     """CytoProcess command line interface."""
+    # Prepare the context object which contains global options
     ctx.ensure_object(dict)
     ctx.obj["debug"] = debug
-    # Normalize sample name if provided (remove path and .cyz extension if present)
+    # Normalize sample name if provided
+    # (remove path and .cyz extension if present)
     if sample:
         sample_path = Path(sample)
         sample = sample_path.stem
     ctx.obj["sample"] = sample
 
 
-
-@cli.command()
+@cli.command(name="install")
 @click.pass_context
 def install(ctx):
     """Install depency: Cyz2Json converter."""
@@ -51,12 +53,12 @@ def create(ctx, project):
 @click.option("--extra-fields", default="object_lon,object_lat,object_date,object_time,object_depth_min,object_depth_max,object_lon_end,object_lat_end", help="Comma-separated list of extra fields to add as columns in samples.csv")
 @click.pass_context
 def list_samples(ctx, project, extra_fields):
-    """List samples and create/update samples.csv metadata file."""
+    """List samples and create/update samples.csv."""
     from cytoprocess.commands import list as list_cmd
     list_cmd.run(ctx, project=project, extra_fields=extra_fields)
 
 
-@cli.command()
+@cli.command(name="convert")
 @click.argument("project")
 @click.option("--force", is_flag=True, default=False, help="Force conversion even if .json files already exist")
 @click.pass_context
@@ -119,7 +121,7 @@ def compute_features(ctx, project, force, max_cores):
     compute_features.run(ctx, project=project, force=force, max_cores=max_cores)
 
 
-@cli.command()
+@cli.command(name="prepare")
 @click.argument("project", type=click.Path(exists=True))
 @click.option("--force", is_flag=True, help="Force preparation even if output files already exist")
 @click.option("--only-tsv", is_flag=True, help="Only create TSV files, skip zip file creation (useful to update metadata only)")
@@ -130,7 +132,7 @@ def prepare(ctx, project, force, only_tsv):
     prepare.run(ctx, project, force=force, only_tsv=only_tsv)
 
 
-@cli.command()
+@cli.command(name="upload")
 @click.argument("project", type=click.Path(exists=True))
 @click.option("--username", "-u", help="EcoTaxa email address")
 @click.option("--password", "-p", help="EcoTaxa password")
@@ -145,7 +147,7 @@ def upload(ctx, project, username, password):
 @click.argument("project")
 @click.option("--force", is_flag=True, default=False, help="Force processing even if output already exists")
 @click.pass_context
-def _all(ctx, project, force):
+def all(ctx, project, force):
     """Run all processing steps in sequence."""
     from cytoprocess.commands import (
         convert,

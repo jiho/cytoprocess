@@ -35,7 +35,7 @@ def run(ctx, project):
     logger.debug("Context: %s", getattr(ctx, "obj", {}))
     
     # Remove directory containing .json files
-    # they are large and can be reconverted from .cyz files
+    # (they are large and can be reconverted from .cyz files)
     converted_dir = Path(project) / "converted"
     _remove_directory(converted_dir, logger)
 
