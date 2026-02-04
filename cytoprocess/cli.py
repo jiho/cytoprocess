@@ -9,8 +9,12 @@ import sys
 import click
 from pathlib import Path
 
+# List commands in the order they appear in this file
+class NaturalOrderGroup(click.Group):
+    def list_commands(self, ctx):
+        return self.commands.keys()
 
-@click.group()
+@click.group(cls=NaturalOrderGroup)
 @click.option("--debug", is_flag=True, default=False, help="Show debugging messages.")
 @click.option("--sample", default=None, help="Limit processing to a single sample, specified by the (quoted) name of the .cyz file.")
 @click.pass_context
@@ -35,14 +39,6 @@ def cli(ctx, debug, sample):
     logger.debug(f"CLI started (debug={debug}, sample={sample})")
 
 
-@cli.command()
-@click.argument("project")
-@click.pass_context
-def create(ctx, project):
-    """Create a new CytoProcess project directory."""
-    from cytoprocess.commands import create
-    create.run(ctx, project=project)
-
 
 @cli.command()
 @click.pass_context
@@ -50,6 +46,15 @@ def install(ctx):
     """Install depency: Cyz2Json converter."""
     from cytoprocess.commands import install
     install.run(ctx)
+
+
+@cli.command(name="create")
+@click.argument("project")
+@click.pass_context
+def create(ctx, project):
+    """Create a new CytoProcess project directory."""
+    from cytoprocess.commands import create
+    create.run(ctx, project=project)
 
 
 @cli.command(name="list")
@@ -70,15 +75,6 @@ def convert(ctx, project, force):
     """Convert .cyz files to .json format."""
     from cytoprocess.commands import convert
     convert.run(ctx, project=project, force=force)
-
-
-@cli.command()
-@click.argument("project")
-@click.pass_context
-def cleanup(ctx, project):
-    """Clean up intermediate files in the project directory."""
-    from cytoprocess.commands import cleanup
-    cleanup.run(ctx, project=project)
 
 
 @cli.command(name="extract_meta")
@@ -198,6 +194,15 @@ def _all(ctx, project, force):
     except Exception as e:
         logger.error(f"Processing failed at one of the steps: {e}")
         raise
+
+
+@cli.command(name="cleanup")
+@click.argument("project")
+@click.pass_context
+def cleanup(ctx, project):
+    """Remove intermediate files in the project."""
+    from cytoprocess.commands import cleanup
+    cleanup.run(ctx, project=project)
 
 
 def main(argv=None):
