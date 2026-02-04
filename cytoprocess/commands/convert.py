@@ -42,7 +42,7 @@ def run(ctx, project, force=False):
         
         try:
             # Build and log the command
-            command = [cyz2json_path, str(cyz_file), "--raw", "--output", str(json_file)]
+            command = [cyz2json_path, str(cyz_file), "--raw", "--imaging-set-information","--output", str(json_file)]
             logger.debug(f"Running command: {' '.join(command)}")
             
             # Run Cyz2Json to convert the file
