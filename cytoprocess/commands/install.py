@@ -32,7 +32,7 @@ def _get_release_file_name(logger) -> str:
     if system == "darwin":  # macOS
         release_file = "cyz2json-macos-latest.zip"
     elif system == "linux":
-        release_file = "cyz2json-linux-latest.zip"
+        release_file = "cyz2json-ubuntu-latest.zip"
     elif system == "windows":
         release_file = "cyz2json-windows-latest.zip"
     else:
