@@ -303,15 +303,15 @@ def run(ctx, project, force=False, only_tsv=False):
             logger.warning(f"Sample '{sample_id}' has {len(object_cols)-1} object metadata columns, truncating to 500 (EcoTaxa limit)")
             object_cols = object_cols[:501]
         # Limit sample, process, and acq columns to 50 columns of metadata each
-        if len(sample_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(sample_cols)-1} sample metadata columns, truncating to 50 (EcoTaxa limit)")
-            sample_cols = sample_cols[:51]
-        if len(process_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(process_cols)-1} process metadata columns, truncating to 50 (EcoTaxa limit)")
-            process_cols = process_cols[:51]
-        if len(acq_cols) > 51:
-            logger.warning(f"Sample '{sample_id}' has {len(acq_cols)-1} acq metadata columns, truncating to 50 (EcoTaxa limit)")
-            acq_cols = acq_cols[:51]
+        if len(process_cols) > 31:
+            logger.warning(f"Sample '{sample_id}' has {len(process_cols)-1} process metadata columns, truncating to 30 (EcoTaxa limit)")
+            process_cols = process_cols[:31]
+        if len(acq_cols) > 31:
+            logger.warning(f"Sample '{sample_id}' has {len(acq_cols)-1} acq metadata columns, truncating to 30 (EcoTaxa limit)")
+            acq_cols = acq_cols[:31]
+        if len(sample_cols) > 61:
+            logger.warning(f"Sample '{sample_id}' has {len(sample_cols)-1} sample metadata columns, truncating to 60 (EcoTaxa limit)")
+            sample_cols = sample_cols[:61]
 
         # Order columns for cleanness
         ordered_cols = img_cols + object_cols + process_cols + acq_cols + sample_cols
