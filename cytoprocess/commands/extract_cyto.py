@@ -219,6 +219,9 @@ def run(ctx, project, list_keys=False, force=False):
                 # Prepare data structure: list of dicts, one per particle
                 rows = []
                 
+                # log cases with multiple regions, which should not happen but we want to be aware of it if it does
+                multiple_regions = []
+
                 # Process each particle
                 for particle in particles_data:
                     # Only process particles with images
@@ -249,7 +252,8 @@ def run(ctx, project, list_keys=False, force=False):
                         if len(region) > 0:
                             acq_id = region[0]
                         if len(region) > 1:
-                            logger.warning(f"Particle {particle_idx} belongs to multiple sets ({region}) in '{json_file.name}'; only the first one ('{acq_id}') will be considered.")
+                            multiple_regions.append(tuple(region))
+                            
                     row['acq_id'] = acq_id
                     
                     # Extract each mapped value
@@ -270,7 +274,14 @@ def run(ctx, project, list_keys=False, force=False):
                 if not rows:
                     logger.warning(f"No particle data extracted from '{json_file.name}'")
                     continue
-                
+
+                # Warn about particles which were in multiple sets
+                if multiple_regions:
+                    # Count how many particles were in which combination of sets
+                    unique_tuples, counts = np.unique(multiple_regions, axis=0, return_counts=True)
+                    multiple_regions_counts = dict(zip(map(lambda x: ', '.join(x), unique_tuples), [int(c) for c in counts]))
+                    logger.warning(f"NB: Some particles were in several sets: {multiple_regions_counts}; only the first set has been considered for those particles.")
+
                 # Create DataFrame and save to Parquet
                 df = pd.DataFrame(rows)
                 # add acquisition stats
