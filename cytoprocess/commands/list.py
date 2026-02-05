@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 from pathlib import Path
-from cytoprocess.utils import ensure_project_dir, raiseCytoError, setup_logging, log_command_start, log_command_success
+from cytoprocess.utils import ensure_project_dir, get_sample_files, setup_logging, log_command_start, log_command_success
 
 
 DEFAULT_EXTRA_FIELDS = "object_lon,object_lat,object_date,object_time,object_depth_min,object_depth_max,object_lon_end,object_lat_end"
@@ -20,24 +20,16 @@ def run(ctx, project, extra_fields=DEFAULT_EXTRA_FIELDS):
         extra_field_list = []
     logger.debug(f"Extra fields: {extra_field_list}")
 
-    # Check that the 'converted' directory exists
-    converted_dir = Path(project) / "converted"
-    if not converted_dir.exists():
-        raiseCytoError(f"Converted directory not found: '{converted_dir}', run 'cytoprocess convert {project}' first.", logger)
-
     # Create metadata CSV with sample information   
     meta_dir = ensure_project_dir(project, "meta")
     meta_file = meta_dir / "samples.csv"
     
-    # Create DataFrame from converted files
-    converted_files = list(converted_dir.glob("*.json"))
-    if not converted_files:
-        raiseCytoError(f"No .json files found in '{converted_dir}'", logger)
-        return
+    # List raw files
+    raw_files = get_sample_files(project, logger, kind='cyz', ctx=ctx)
     
     # Create 'samples' DataFrame
     samples = pd.DataFrame({
-        'sample_id': [f.stem for f in converted_files]
+        'sample_id': [f.stem for f in raw_files]
     })
     for field in extra_field_list:
         samples[field] = None
