@@ -2,13 +2,29 @@
 
 Package to process images and their features from .cyz files from the CytoSense and upload them to EcoTaxa.
 
+
 ## Installation
+
+NB: As for all things Python, you should preferrably install CytoProcess within a Python venv/coda environment. The package is tested with Python=3.11 and should therefore work with this or a more recent version. To create a conda environment, use
+
+```bash
+conda create -n cytoprocess python=3.11
+conda activate cytoprocess
+```
+
+Then install the sable version with
+
+```bash
+pip install cytoprocess
+```
+
+*or* the development version with
 
 ```bash
 pip install git+https://github.com/jiho/cytoprocess.git
 ```
 
-This install the Python package that includes a command line tool, which should be available from within a terminal. Try it, which should output the help message
+The Python package includes a command line tool, which should become available from within a terminal. To try it and output the help message
 
 ```bash
 cytoprocess
@@ -20,12 +36,6 @@ CytoProcess depends on [Cyz2Json](https://github.com/OBAMANEXT/cyz2json). To ins
 cytoprocess install
 ```
 
-NB: As for all things Python, you should preferrably install CytoProcess within a Python venv/coda environment. The package is tested with Python=3.11 and should therefore work with this or a more recent version. To create a conda environment, use
-
-```bash
-conda create -n cytoprocess python=3.11
-conda activate cytoprocess
-```
 
 ## Usage
 
