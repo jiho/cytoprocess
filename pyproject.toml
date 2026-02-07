@@ -8,6 +8,15 @@ version = "0.0.1"
 requires-python = ">=3.11"
 description = "Package to process images and their features from .cyz files and upload them to EcoTaxa"
 license = {text = "GPL-3.0-or-later"}
+readme = "README.md"
+authors = [{name = "Jean-Olivier Irisson", email = "irisson@normalesup.org"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 dependencies = [
     "click>=8.0",
     "ijson>=3.0",
@@ -21,5 +30,13 @@ dependencies = [
     "scipy>=1.7"
 ]
 
+[project.urls]
+Homepage = "https://github.com/jiho/cytoprocess"
+Repository = "https://github.com/jiho/cytoprocess"
+Issues = "https://github.com/jiho/cytoprocess/issues"
+
 [project.scripts]
 cytoprocess = "cytoprocess.cli:main"
+
+[tool.setuptools.package-data]
+cytoprocess = ["templates/*.yaml"]
