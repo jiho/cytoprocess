@@ -1,7 +1,6 @@
 # CytoProcess
 
-Package to process images and their features from .cyz files and upload them to EcoTaxa.
-
+Package to process images and their features from .cyz files from the CytoSense and upload them to EcoTaxa.
 
 ## Installation
 
